@@ -1,0 +1,1449 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SENOL — Mühürdar</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:#0b1118;color:#e8eef5;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;overflow:hidden;user-select:none}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:20}
+#menu{display:flex;background:radial-gradient(ellipse at 50% 80%,rgba(20,40,60,.25),rgba(5,10,16,.72))}
+h1{font-size:clamp(46px,9vw,110px);letter-spacing:.35em;font-weight:300;text-shadow:0 0 40px rgba(100,200,255,.5);margin-left:.35em}
+.tag{color:#8fb7d1;letter-spacing:.25em;font-size:14px;margin-bottom:24px;text-transform:uppercase}
+button{background:rgba(20,35,50,.78);color:#dce9f5;border:1px solid rgba(120,190,230,.45);padding:12px 34px;min-width:260px;font-size:17px;letter-spacing:.08em;cursor:pointer;transition:.15s;border-radius:2px}
+button:hover,button.focus{background:rgba(60,120,160,.55);border-color:#8fd6ff;box-shadow:0 0 20px rgba(100,200,255,.35)}
+.panel{background:rgba(8,14,22,.94);border:1px solid rgba(120,190,230,.4);padding:26px 34px;max-width:860px;width:92%;display:flex;flex-direction:column;gap:12px;align-items:stretch}
+.panel h2{font-weight:400;letter-spacing:.2em;color:#9fd8ff;text-align:center;margin-bottom:6px}
+table{border-collapse:collapse;width:100%;font-size:15px}td,th{padding:7px 10px;border-bottom:1px solid rgba(120,190,230,.15);text-align:left}th{color:#8fb7d1;font-weight:500}
+label{display:flex;justify-content:space-between;gap:20px;align-items:center;font-size:15px}input[type=range]{width:240px}
+#hud{display:none;position:fixed;inset:0;pointer-events:none;z-index:10}
+.bar{height:12px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);overflow:hidden}
+#bars{position:absolute;left:24px;top:22px;width:320px;display:flex;flex-direction:column;gap:6px}
+#hpfill{height:100%;background:linear-gradient(90deg,#b93b3b,#e86a5a);width:100%;transition:width .15s}#resfill{height:100%;background:linear-gradient(90deg,#2c7fb8,#7fd1ff);width:0%}
+#resbar.full{box-shadow:0 0 14px #7fd1ff;border-color:#bfe9ff}#resbar.full #resfill{background:#d7f3ff}
+#obj{position:absolute;left:24px;top:76px;font-size:13px;color:#cfe6f5;text-shadow:0 1px 3px #000;max-width:420px}
+#prompt{position:absolute;top:13%;left:50%;transform:translateX(-50%);font-size:20px;letter-spacing:.04em;text-shadow:0 0 10px #000,0 0 20px rgba(100,200,255,.6);opacity:0;transition:opacity .3s;text-align:center;padding:0 20px}
+#subwrap{position:absolute;bottom:11%;left:50%;transform:translateX(-50%);max-width:70%;text-align:center;opacity:0;transition:opacity .4s}
+#sub{font-size:20px;line-height:1.4;text-shadow:0 0 6px #000,0 2px 10px #000;color:#eaf6ff}#subwrap:before{content:'VAEL';display:block;font-size:12px;letter-spacing:.35em;color:#7fd1ff;margin-bottom:4px}
+#bossbar{display:none;position:absolute;bottom:5%;left:50%;transform:translateX(-50%);width:min(620px,70%)}#bossname{text-align:center;letter-spacing:.25em;font-size:14px;margin-bottom:4px;text-shadow:0 1px 4px #000}
+#bossfill{height:100%;background:linear-gradient(90deg,#7a2a8a,#d46bd4);width:100%;transition:width .2s}
+#hint{position:absolute;right:20px;bottom:16px;font-size:12px;color:#b8cfe0;text-shadow:0 1px 3px #000;opacity:.85}#hint b{color:#fff}
+#vig{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;z-index:12}#vig.hurt{box-shadow:inset 0 0 160px 60px rgba(200,20,20,.55)}
+#fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity 1.6s;z-index:30}
+body.cine #hud>*:not(#subwrap){opacity:0!important}body.cine:before,body.cine:after{content:'';position:fixed;left:0;right:0;height:11%;background:#000;z-index:15}body.cine:before{top:0}body.cine:after{bottom:0}
+#pausemenu{background:rgba(5,10,16,.7)}#end{background:rgba(0,0,0,.92);z-index:40}#end h2{font-size:42px;letter-spacing:.3em;font-weight:300}#endstats{color:#9fd8ff}
+#fatal{display:none;position:fixed;inset:0;background:#0b1118;align-items:center;justify-content:center;z-index:99;text-align:center;padding:30px;font-size:18px}
+.focus{outline:2px solid #8fd6ff;outline-offset:3px}#toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:rgba(10,30,45,.9);border:1px solid #6fc0ee;padding:8px 18px;font-size:14px;opacity:0;transition:opacity .4s;z-index:60;pointer-events:none}
+.note{font-size:12px;color:#7f96a8;text-align:center;margin-top:8px}
+</style></head><body class="menu">
+<canvas id="c"></canvas>
+<div id="hud">
+  <div id="bars"><div class="bar"><div id="hpfill"></div></div><div class="bar" id="resbar" style="height:8px"><div id="resfill"></div></div></div>
+  <div id="obj"></div><div id="prompt"></div>
+  <div id="subwrap"><div id="sub"></div></div>
+  <div id="bossbar"><div id="bossname"></div><div class="bar"><div id="bossfill"></div></div></div>
+  <div id="hint"></div>
+</div>
+<div id="vig"></div><div id="fade"></div>
+<div id="menu" class="screen">
+  <h1>SENOL</h1><div class="tag">Mühürdar · Rezonans Tırpanı</div>
+  <button id="btnNew">Yeni Oyun</button><button id="btnContinue" style="display:none">Devam Et</button><button id="btnControls">Kontroller</button><button id="btnSettings">Ayarlar</button>
+  <div class="note">Kumandanı bağla ve herhangi bir tuşa bas · Klavye + fare de çalışır</div>
+</div>
+<div id="pausemenu" class="screen"><h2 style="letter-spacing:.3em;font-weight:300;font-size:32px">DURAKLATILDI</h2>
+  <button id="pResume">Devam</button><button id="pControls">Kontroller</button><button id="pSettings">Ayarlar</button><button id="pMenu">Ana Menü</button></div>
+<div id="controls" class="screen" style="z-index:50;background:rgba(0,0,0,.6)"><div class="panel"><h2>KONTROLLER</h2><table id="ctable"></table><button id="closeControls" style="align-self:center;margin-top:10px">Kapat</button></div></div>
+<div id="settings" class="screen" style="z-index:50;background:rgba(0,0,0,.6)"><div class="panel" style="max-width:520px"><h2>AYARLAR</h2>
+  <label>Ses <input id="vol" type="range" min="0" max="1" step="0.05"></label><label>Fare / çubuk hassasiyeti <input id="mouse" type="range" min="0.3" max="2.5" step="0.1"></label>
+  <label>Vael'i sesli oku (tarayıcı sesi) <input id="voice" type="checkbox"></label><button id="closeSettings" style="align-self:center;margin-top:10px">Tamam</button></div></div>
+<div id="end" class="screen"><h2>SENOL'UN YOLCULUĞU BAŞLIYOR</h2><div style="color:#8fb7d1">Demo sonu — oynadığın için teşekkürler</div><div id="endstats"></div><button id="endMenu">Ana Menü</button></div>
+<div id="toast"></div><div id="fatal"></div>
+<script>
+'use strict';
+// ===================== Küçük 3B motor (WebGL2, bağımlılık yok) =====================
+const M4 = (() => {
+  const tmp = new Float32Array(16);
+  function mul(a, b, out) {
+    for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
+      let s = 0; for (let k = 0; k < 4; k++) s += a[k * 4 + r] * b[c * 4 + k];
+      tmp[c * 4 + r] = s;
+    }
+    out = out || new Float32Array(16); out.set(tmp); return out;
+  }
+  // Unity sırası: R = Ry * Rx * Rz (derece değil radyan)
+  function trs(o, px, py, pz, rx, ry, rz, sx, sy, sz) {
+    const cx = Math.cos(rx), sxn = Math.sin(rx), cy = Math.cos(ry), syn = Math.sin(ry), cz = Math.cos(rz), szn = Math.sin(rz);
+    o[0] = (cy * cz + syn * sxn * szn) * sx; o[1] = (cx * szn) * sx; o[2] = (-syn * cz + cy * sxn * szn) * sx; o[3] = 0;
+    o[4] = (-cy * szn + syn * sxn * cz) * sy; o[5] = (cx * cz) * sy; o[6] = (syn * szn + cy * sxn * cz) * sy; o[7] = 0;
+    o[8] = (syn * cx) * sz; o[9] = (-sxn) * sz; o[10] = (cy * cx) * sz; o[11] = 0;
+    o[12] = px; o[13] = py; o[14] = pz; o[15] = 1;
+    return o;
+  }
+  function persp(fov, aspect, n, f) {
+    const t = 1 / Math.tan(fov / 2), o = new Float32Array(16);
+    o[0] = t / aspect; o[5] = t; o[10] = (f + n) / (n - f); o[11] = -1; o[14] = 2 * f * n / (n - f); return o;
+  }
+  // Sol-elli dünya: +x ekranda sağda. Ayna matris olduğu için yüz ayıklama kapalı.
+  function look(e, t) {
+    let fx = t[0] - e[0], fy = t[1] - e[1], fz = t[2] - e[2];
+    const fl = Math.hypot(fx, fy, fz); fx /= fl; fy /= fl; fz /= fl;
+    let sx = fz, sy = 0, sz = -fx; // up(0,1,0) x f
+    const sl = Math.hypot(sx, sy, sz) || 1; sx /= sl; sy /= sl; sz /= sl;
+    const ux = fy * sz - fz * sy, uy = fz * sx - fx * sz, uz = fx * sy - fy * sx;
+    const o = new Float32Array(16);
+    o[0] = sx; o[4] = sy; o[8] = sz; o[12] = -(sx * e[0] + sy * e[1] + sz * e[2]);
+    o[1] = ux; o[5] = uy; o[9] = uz; o[13] = -(ux * e[0] + uy * e[1] + uz * e[2]);
+    o[2] = -fx; o[6] = -fy; o[10] = -fz; o[14] = (fx * e[0] + fy * e[1] + fz * e[2]);
+    o[15] = 1; return o;
+  }
+  return { mul, trs, persp, look };
+})();
+
+class Node {
+  constructor(name, mesh) {
+    this.name = name || ''; this.p = [0, 0, 0]; this.r = [0, 0, 0]; this.s = [1, 1, 1];
+    this.children = []; this.parent = null; this.mesh = mesh || null;
+    this.color = [1, 1, 1]; this.emis = [0, 0, 0]; this.alpha = 1; this.visible = true;
+    this.additive = false; this.unlit = false; this.sky = false;
+    this.world = new Float32Array(16); this.ws = [1, 1, 1]; this._l = new Float32Array(16);
+  }
+  add(c) { c.parent = this; this.children.push(c); return c; }
+  remove(c) { const i = this.children.indexOf(c); if (i >= 0) { this.children.splice(i, 1); c.parent = null; } }
+  find(path) { let n = this; for (const part of path.split('/')) { n = n.children.find(c => c.name === part); if (!n) return null; } return n; }
+  update(pw, pws) {
+    M4.trs(this._l, this.p[0], this.p[1], this.p[2], this.r[0], this.r[1], this.r[2], this.s[0], this.s[1], this.s[2]);
+    if (pw) M4.mul(pw, this._l, this.world); else this.world.set(this._l);
+    this.ws = pws ? [pws[0] * this.s[0], pws[1] * this.s[1], pws[2] * this.s[2]] : this.s.slice();
+    for (const c of this.children) c.update(this.world, this.ws);
+  }
+  worldPos() { return [this.world[12], this.world[13], this.world[14]]; }
+}
+const DEG = Math.PI / 180;
+
+class Renderer {
+  constructor(canvas) {
+    const gl = this.gl = canvas.getContext('webgl2', { antialias: true, alpha: false });
+    if (!gl) throw new Error('WebGL2 desteklenmiyor');
+    this.canvas = canvas;
+    const vs = `#version 300 es
+in vec3 aPos; in vec3 aNor; in vec3 aCol;
+uniform mat4 uVP; uniform mat4 uModel; uniform vec3 uScale;
+out vec3 vN; out vec3 vW; out vec3 vC;
+void main(){ vec4 w = uModel*vec4(aPos,1.0); vW=w.xyz; vC=aCol;
+  vN = mat3(uModel)*(aNor/max(uScale*uScale,vec3(0.0001))); gl_Position = uVP*w; }`;
+    const fs = `#version 300 es
+precision highp float;
+in vec3 vN; in vec3 vW; in vec3 vC;
+uniform vec3 uColor; uniform vec3 uEmis; uniform float uAlpha; uniform int uMode; // 0 lit,1 unlit,2 sky
+uniform vec3 uSun; uniform vec3 uSunCol; uniform vec3 uCam; uniform vec3 uFog; uniform float uFogD;
+uniform vec3 uSkyTop; uniform vec3 uSkyHor;
+out vec4 o;
+void main(){
+  vec3 base = uColor*vC;
+  if(uMode==2){ vec3 d=normalize(vW-uCam); float h=clamp(d.y*1.6,0.0,1.0); vec3 c=mix(uSkyHor,uSkyTop,pow(h,0.6));
+    float s=max(dot(d,normalize(uSun)),0.0); c+=uSunCol*(pow(s,600.0)*2.0+pow(s,12.0)*0.25); o=vec4(c,1.0); return; }
+  vec3 col;
+  if(uMode==1){ col = base+uEmis; }
+  else {
+    vec3 n=normalize(vN); vec3 v=normalize(uCam-vW); if(dot(n,v)<0.0) n=-n;
+    float d=max(dot(n,normalize(uSun)),0.0);
+    vec3 amb = mix(vec3(0.30,0.28,0.24), vec3(0.50,0.62,0.82), n.y*0.5+0.5);
+    col = base*(amb*0.9 + uSunCol*d*0.95) + uEmis;
+  }
+  float dist=length(uCam-vW); float f=1.0-exp(-uFogD*dist*uFogD*dist*0.55-uFogD*dist*0.35); f=clamp(f,0.0,1.0);
+  if(uMode==1 && uAlpha<1.0) f*=0.4;
+  o = vec4(mix(col,uFog,f), uAlpha);
+}`;
+    const mk = (t, s) => { const sh = gl.createShader(t); gl.shaderSource(sh, s); gl.compileShader(sh); if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh)); return sh; };
+    const pr = this.prog = gl.createProgram();
+    gl.attachShader(pr, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(pr, mk(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(pr);
+    if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr));
+    gl.useProgram(pr);
+    this.u = {}; for (const n of ['uVP', 'uModel', 'uScale', 'uColor', 'uEmis', 'uAlpha', 'uMode', 'uSun', 'uSunCol', 'uCam', 'uFog', 'uFogD', 'uSkyTop', 'uSkyHor']) this.u[n] = gl.getUniformLocation(pr, n);
+    this.sun = [0.45, 0.62, 0.5]; this.sunCol = [1.0, 0.88, 0.72];
+    this.fog = [0.66, 0.74, 0.82]; this.fogD = 0.0046;
+    this.skyTop = [0.28, 0.48, 0.82]; this.skyHor = [0.78, 0.84, 0.90];
+    this.view = M4.ident ? null : null;
+    this.cam = [0, 5, -8];
+    this.root = new Node('root');
+    this.resize();
+  }
+  resize() {
+    const c = this.canvas, dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const w = Math.floor(c.clientWidth * dpr), h = Math.floor(c.clientHeight * dpr);
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    this.aspect = c.width / c.height;
+  }
+  // Mesh: {pos, nor, col, idx}
+  upload(m) {
+    const gl = this.gl, vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+    const mkb = (data, loc, size) => { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0); };
+    mkb(new Float32Array(m.pos), 0, 3); mkb(new Float32Array(m.nor), 1, 3);
+    const col = m.col ? new Float32Array(m.col) : new Float32Array(m.pos.length).fill(1);
+    mkb(col, 2, 3);
+    const ib = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+    const big = m.pos.length / 3 > 65535;
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, big ? new Uint32Array(m.idx) : new Uint16Array(m.idx), gl.STATIC_DRAW);
+    gl.bindVertexArray(null);
+    return { vao, n: m.idx.length, type: big ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT };
+  }
+  render(camPos, camTarget, fov) {
+    const gl = this.gl; this.resize();
+    gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    gl.clearColor(this.fog[0], this.fog[1], this.fog[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE);
+    const view = M4.look(camPos, camTarget), proj = M4.persp(fov * DEG, this.aspect, 0.15, 1500);
+    const vp = M4.mul(proj, view);
+    const u = this.u;
+    gl.uniformMatrix4fv(u.uVP, false, vp); gl.uniform3fv(u.uSun, this.sun); gl.uniform3fv(u.uSunCol, this.sunCol);
+    gl.uniform3fv(u.uCam, camPos); gl.uniform3fv(u.uFog, this.fog); gl.uniform1f(u.uFogD, this.fogD);
+    gl.uniform3fv(u.uSkyTop, this.skyTop); gl.uniform3fv(u.uSkyHor, this.skyHor);
+    this.root.update(null, null);
+    const opaque = [], trans = [];
+    const walk = (n) => {
+      if (!n.visible) return;
+      if (n.mesh) (n.alpha < 1 || n.additive ? trans : opaque).push(n);
+      for (const c of n.children) walk(c);
+    };
+    walk(this.root);
+    const draw = (n) => {
+      gl.uniformMatrix4fv(u.uModel, false, n.world); gl.uniform3fv(u.uScale, n.ws);
+      gl.uniform3fv(u.uColor, n.color); gl.uniform3fv(u.uEmis, n.emis); gl.uniform1f(u.uAlpha, n.alpha);
+      gl.uniform1i(u.uMode, n.sky ? 2 : (n.unlit ? 1 : 0));
+      gl.bindVertexArray(n.mesh.vao); gl.drawElements(gl.TRIANGLES, n.mesh.n, n.mesh.type, 0);
+    };
+    gl.depthMask(true); gl.disable(gl.BLEND);
+    for (const n of opaque) draw(n);
+    gl.enable(gl.BLEND); gl.depthMask(false);
+    const d2 = (n) => { const dx = n.world[12] - camPos[0], dy = n.world[13] - camPos[1], dz = n.world[14] - camPos[2]; return dx * dx + dy * dy + dz * dz; };
+    trans.sort((a, b) => d2(b) - d2(a));
+    for (const n of trans) { gl.blendFunc(n.additive ? gl.SRC_ALPHA : gl.SRC_ALPHA, n.additive ? gl.ONE : gl.ONE_MINUS_SRC_ALPHA); draw(n); }
+    gl.depthMask(true);
+  }
+}
+
+// ---------- Mesh üreticiler ----------
+const Geo = (() => {
+  function box() {
+    const p = [], n = [], idx = []; const F = [[[1,0,0],[0,1,0],[0,0,1]],[[-1,0,0],[0,1,0],[0,0,-1]],[[0,1,0],[0,0,1],[1,0,0]],[[0,-1,0],[0,0,-1],[1,0,0]],[[0,0,1],[0,1,0],[-1,0,0]],[[0,0,-1],[0,1,0],[1,0,0]]];
+    for (const [nn, u, v] of F) {
+      const b = p.length / 3;
+      for (const [a, c] of [[-1,-1],[1,-1],[1,1],[-1,1]]) p.push((nn[0]+u[0]*a+v[0]*c)*0.5,(nn[1]+u[1]*a+v[1]*c)*0.5,(nn[2]+u[2]*a+v[2]*c)*0.5), n.push(...nn);
+      idx.push(b,b+1,b+2,b,b+2,b+3);
+    }
+    return { pos: p, nor: n, idx };
+  }
+  function sphere(lat = 10, lon = 14) {
+    const p = [], n = [], idx = [];
+    for (let i = 0; i <= lat; i++) { const t = i / lat * Math.PI, y = Math.cos(t), r = Math.sin(t);
+      for (let j = 0; j <= lon; j++) { const a = j / lon * Math.PI * 2, x = Math.cos(a) * r, z = Math.sin(a) * r; p.push(x * .5, y * .5, z * .5); n.push(x, y, z); } }
+    for (let i = 0; i < lat; i++) for (let j = 0; j < lon; j++) { const a = i * (lon + 1) + j, b = a + lon + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+    return { pos: p, nor: n, idx };
+  }
+  function cyl(seg = 12) {
+    const p = [], n = [], idx = [];
+    for (let j = 0; j <= seg; j++) { const a = j / seg * Math.PI * 2, x = Math.cos(a), z = Math.sin(a);
+      p.push(x * .5, -.5, z * .5, x * .5, .5, z * .5); n.push(x, 0, z, x, 0, z); }
+    for (let j = 0; j < seg; j++) { const a = j * 2; idx.push(a, a + 1, a + 2, a + 2, a + 1, a + 3); }
+    for (const s of [-1, 1]) { const c = p.length / 3; p.push(0, s * .5, 0); n.push(0, s, 0);
+      for (let j = 0; j <= seg; j++) { const a = j / seg * Math.PI * 2; p.push(Math.cos(a) * .5, s * .5, Math.sin(a) * .5); n.push(0, s, 0); }
+      for (let j = 0; j < seg; j++) idx.push(c, c + 1 + j, c + 2 + j); }
+    return { pos: p, nor: n, idx };
+  }
+  function cone(seg = 9) { // taban y=0, uç y=1
+    const p = [], n = [], idx = [];
+    for (let j = 0; j <= seg; j++) { const a = j / seg * Math.PI * 2, x = Math.cos(a), z = Math.sin(a);
+      p.push(x * .5, 0, z * .5, 0, 1, 0); const l = Math.hypot(1, .5); n.push(x / l, .5 / l, z / l, x / l, .5 / l, z / l); }
+    for (let j = 0; j < seg; j++) idx.push(j * 2, j * 2 + 1, j * 2 + 2);
+    const c = p.length / 3; p.push(0, 0, 0); n.push(0, -1, 0);
+    for (let j = 0; j <= seg; j++) { const a = j / seg * Math.PI * 2; p.push(Math.cos(a) * .5, 0, Math.sin(a) * .5); n.push(0, -1, 0); }
+    for (let j = 0; j < seg; j++) idx.push(c, c + 2 + j, c + 1 + j);
+    return { pos: p, nor: n, idx };
+  }
+  // Yatay halka (iç yarıçap in, dış 1), isteğe bağlı yay açısı
+  function ring(inner = 0.85, seg = 48, arc = Math.PI * 2, start = 0) {
+    const p = [], n = [], idx = [];
+    for (let j = 0; j <= seg; j++) { const a = start + j / seg * arc, x = Math.cos(a), z = Math.sin(a);
+      p.push(x * inner, 0, z * inner, x, 0, z); n.push(0, 1, 0, 0, 1, 0); }
+    for (let j = 0; j < seg; j++) idx.push(j * 2, j * 2 + 1, j * 2 + 2, j * 2 + 2, j * 2 + 1, j * 2 + 3);
+    return { pos: p, nor: n, idx };
+  }
+  function quad() { return { pos: [-.5, 0, -.5, .5, 0, -.5, .5, 0, .5, -.5, 0, .5], nor: [0,1,0,0,1,0,0,1,0,0,1,0], idx: [0, 1, 2, 0, 2, 3] }; }
+  function rock(seed) { // yamuk sfer
+    const g = sphere(7, 9); let s = seed * 97.13;
+    const rnd = () => (s = (s * 16807 + 11) % 2147483647) / 2147483647;
+    const verts = new Map();
+    for (let i = 0; i < g.pos.length; i += 3) {
+      const k = g.pos[i].toFixed(3) + g.pos[i + 1].toFixed(3) + g.pos[i + 2].toFixed(3);
+      if (!verts.has(k)) verts.set(k, 0.75 + rnd() * 0.5);
+      const f = verts.get(k); g.pos[i] *= f; g.pos[i + 1] = Math.max(g.pos[i + 1] * f, -0.18); g.pos[i + 2] *= f;
+    }
+    return g;
+  }
+  function grass() { // 6 bıçaklı öbek
+    const p = [], n = [], idx = [];
+    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2, dx = Math.cos(a), dz = Math.sin(a), sx = -dz * .06, sz = dx * .06, b = p.length / 3;
+      p.push(dx * .12 - sx, 0, dz * .12 - sz, dx * .12 + sx, 0, dz * .12 + sz, dx * .24, .55 + (i % 3) * .12, dz * .24); n.push(0, 1, 0, 0, 1, 0, 0, 1, 0); idx.push(b, b + 1, b + 2); }
+    return { pos: p, nor: n, idx };
+  }
+  return { box, sphere, cyl, cone, ring, quad, rock, grass };
+})();
+
+let R, MESH = {};
+function initMeshes() {
+  MESH.box = R.upload(Geo.box()); MESH.sphere = R.upload(Geo.sphere()); MESH.cyl = R.upload(Geo.cyl()); MESH.cone = R.upload(Geo.cone());
+  MESH.ring = R.upload(Geo.ring(0.82)); MESH.ringThin = R.upload(Geo.ring(0.93)); MESH.quad = R.upload(Geo.quad()); MESH.grass = R.upload(Geo.grass());
+  MESH.arc = R.upload(Geo.ring(0.62, 24, 2.3, -1.15 + Math.PI / 2)); // ileri (+z) etrafında yay
+  MESH.rocks = [R.upload(Geo.rock(1)), R.upload(Geo.rock(2)), R.upload(Geo.rock(3))];
+}
+function hex(h) { return [((h >> 16) & 255) / 255, ((h >> 8) & 255) / 255, (h & 255) / 255]; }
+// Hızlı parça üretici
+function part(parent, mesh, name, pos, scale, color, opts) {
+  const n = new Node(name, mesh); n.p = pos; n.s = scale; n.color = typeof color === 'number' ? hex(color) : color;
+  if (opts) Object.assign(n, opts);
+  if (parent) parent.add(n); return n;
+}
+function pivot(parent, name, pos) { const n = new Node(name); n.p = pos.slice(); if (parent) parent.add(n); return n; }
+
+// ===================== Dünya: arazi, bitki örtüsü, kalıntılar =====================
+const WORLD = { flat: { x0: -46, x1: 46, z0: -40, z1: 165 }, cx: 0, cz: 62, size: 720, N: 181, waterY: -4, colliders: [] };
+
+function hash2(ix, iz) { let h = (ix * 374761393 + iz * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; }
+function vnoise(x, z) {
+  const ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz;
+  const sx = fx * fx * (3 - 2 * fx), sz = fz * fz * (3 - 2 * fz);
+  const a = hash2(ix, iz), b = hash2(ix + 1, iz), c = hash2(ix, iz + 1), d = hash2(ix + 1, iz + 1);
+  return a + (b - a) * sx + (c - a) * sz + (a - b - c + d) * sx * sz;
+}
+function fbm(x, z, oct) { let a = .5, f = 1, s = 0, n = 0; for (let i = 0; i < oct; i++) { s += a * vnoise(x * f + 31.7, z * f + 12.3); n += a; a *= .5; f *= 2; } return s / n; }
+const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+function distOutside(x, z) { const f = WORLD.flat; const dx = Math.max(f.x0 - x, 0, x - f.x1), dz = Math.max(f.z0 - z, 0, z - f.z1); return Math.hypot(dx, dz); }
+function heightFn(x, z) {
+  const d = distOutside(x, z), w = sstep(0, 50, d);
+  const hills = (fbm(x * .010, z * .010, 4) - .40) * 42;
+  const ridge = 1 - Math.abs(fbm(x * .006 + 11, z * .006 + 7, 3) * 2 - 1);
+  const mount = Math.pow(ridge, 3) * 95 * sstep(0, 1, (d - 80) / 170);
+  let h = hills + mount; if (h < 0) h *= sstep(0, 1, (d - 55) / 90);
+  return Math.max(h * w, -10);
+}
+let TERRAIN = null;
+function groundY(x, z) {
+  const T = TERRAIN; const u = (x - T.x0) / T.cell, v = (z - T.z0) / T.cell;
+  const i = Math.min(T.N - 2, Math.max(0, Math.floor(u))), j = Math.min(T.N - 2, Math.max(0, Math.floor(v)));
+  const fu = Math.min(1, Math.max(0, u - i)), fv = Math.min(1, Math.max(0, v - j));
+  const H = T.h, N = T.N;
+  const a = H[j * N + i], b = H[j * N + i + 1], c = H[(j + 1) * N + i], d = H[(j + 1) * N + i + 1];
+  return a + (b - a) * fu + (c - a) * fv + (a - b - c + d) * fu * fv;
+}
+function slopeAt(x, z) { const h = groundY(x, z); return Math.atan(Math.hypot(groundY(x + 2, z) - h, groundY(x, z + 2) - h) / 2) / DEG; }
+
+class Batch {
+  constructor() { this.pos = []; this.nor = []; this.col = []; this.idx = []; this._m = new Float32Array(16); this._r = new Float32Array(16); }
+  add(geo, p, r, s, color) {
+    const m = M4.trs(this._m, p[0], p[1], p[2], r[0] * DEG, r[1] * DEG, r[2] * DEG, s[0], s[1], s[2]);
+    const q = M4.trs(this._r, 0, 0, 0, r[0] * DEG, r[1] * DEG, r[2] * DEG, 1, 1, 1);
+    const base = this.pos.length / 3, c = typeof color === 'number' ? hex(color) : color;
+    for (let i = 0; i < geo.pos.length; i += 3) {
+      const x = geo.pos[i], y = geo.pos[i + 1], z = geo.pos[i + 2];
+      this.pos.push(m[0] * x + m[4] * y + m[8] * z + m[12], m[1] * x + m[5] * y + m[9] * z + m[13], m[2] * x + m[6] * y + m[10] * z + m[14]);
+      let nx = geo.nor[i] / s[0], ny = geo.nor[i + 1] / s[1], nz = geo.nor[i + 2] / s[2];
+      let X = q[0] * nx + q[4] * ny + q[8] * nz, Y = q[1] * nx + q[5] * ny + q[9] * nz, Z = q[2] * nx + q[6] * ny + q[10] * nz;
+      const l = Math.hypot(X, Y, Z) || 1; this.nor.push(X / l, Y / l, Z / l); this.col.push(c[0], c[1], c[2]);
+    }
+    for (const k of geo.idx) this.idx.push(base + k);
+  }
+  node(name) { const n = new Node(name, R.upload(this)); return n; }
+}
+
+function buildTerrain(root) {
+  const N = WORLD.N, size = WORLD.size, x0 = WORLD.cx - size / 2, z0 = WORLD.cz - size / 2, cell = size / (N - 1);
+  const h = new Float32Array(N * N);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) h[j * N + i] = heightFn(x0 + i * cell, z0 + j * cell);
+  TERRAIN = { h, N, x0, z0, cell };
+  const pos = [], nor = [], col = [], idx = [];
+  const grassA = [.20, .38, .11], grassB = [.36, .52, .17], rockA = [.40, .38, .35], dirtA = [.42, .32, .21], sand = [.55, .50, .36];
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const x = x0 + i * cell, z = z0 + j * cell, y = h[j * N + i];
+    pos.push(x, y, z);
+    const hl = h[j * N + Math.max(i - 1, 0)], hr = h[j * N + Math.min(i + 1, N - 1)], hd = h[Math.max(j - 1, 0) * N + i], hu = h[Math.min(j + 1, N - 1) * N + i];
+    const nx = hl - hr, nz = hd - hu, ny = 2 * cell, l = Math.hypot(nx, ny, nz); nor.push(nx / l, ny / l, nz / l);
+    const slope = Math.atan(Math.hypot(nx, nz) / ny) / DEG, t = fbm(x * .05, z * .05, 3), t2 = fbm(x * .3, z * .3, 2);
+    let c = [grassA[0] + (grassB[0] - grassA[0]) * t, grassA[1] + (grassB[1] - grassA[1]) * t, grassA[2] + (grassB[2] - grassA[2]) * t];
+    const rk = Math.max(sstep(26, 40, slope), sstep(55, 80, y));
+    const dirt = (distOutside(x, z) < 10 && t > .6 ? .6 : 0);
+    const sd = y < WORLD.waterY + 2.5 ? .9 : 0;
+    const mix = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+    c = mix(c, dirtA, dirt); c = mix(c, sand, sd); c = mix(c, rockA, rk);
+    const g = .9 + t2 * .2; col.push(c[0] * g, c[1] * g, c[2] * g);
+  }
+  for (let j = 0; j < N - 1; j++) for (let i = 0; i < N - 1; i++) { const a = j * N + i; idx.push(a, a + N, a + 1, a + 1, a + N, a + N + 1); }
+  const n = new Node('Terrain', R.upload({ pos, nor, col, idx })); root.add(n);
+  const w = part(root, MESH.quad, 'Water', [WORLD.cx, WORLD.waterY, WORLD.cz], [size, 1, size], [.12, .38, .48], { alpha: .86 }); w.emis = [.02, .05, .07];
+}
+
+function buildScenery(root) {
+  let seed = 20251107; const rnd = () => (seed = (seed * 16807 + 7) % 2147483647) / 2147483647, R_ = (a, b) => a + rnd() * (b - a);
+  const B = new Batch(), cs = WORLD.colliders, c0 = [WORLD.cx, WORLD.cz];
+  const ok = (x, z, minD, maxSlope, minY) => { if (distOutside(x, z) < minD) return null; const y = groundY(x, z); if (y < (minY === undefined ? WORLD.waterY + 1 : minY) || slopeAt(x, z) > maxSlope) return null; return y; };
+  // Ağaçlar ve çamlar
+  let placed = 0, tries = 0;
+  while (placed < 420 && tries < 8000) {
+    tries++; const x = c0[0] + R_(-350, 350), z = c0[1] + R_(-350, 350); const y = ok(x, z, 6, 30); if (y === null || y > 50) continue;
+    const forest = fbm(x * .02, z * .02, 2); if (forest < .42 && rnd() > .12) continue; placed++;
+    const s = R_(.8, 1.6);
+    if (y > 22 || rnd() < .4) {
+      B.add(Geo.cyl(6), [x, y + 1.2 * s, z], [0, 0, 0], [.35 * s, 2.4 * s, .35 * s], 0x4a3220);
+      for (let i = 0; i < 3; i++) B.add(Geo.cone(9), [x, y + (1.4 + i * 1.5) * s, z], [0, R_(0, 360), 0], [(4.2 - i * 1.1) * s, 3 * s, (4.2 - i * 1.1) * s], [.08, .26 + i * .02, .15]);
+    } else {
+      B.add(Geo.cyl(6), [x, y + 2 * s, z], [R_(-4, 4), 0, R_(-4, 4)], [.6 * s, 4 * s, .6 * s], 0x47301f);
+      for (let i = 0; i < 3; i++) { const r = R_(2.6, 3.8) * s; B.add(Geo.sphere(6, 8), [x + R_(-1.2, 1.2) * s, y + 4.6 * s + R_(0, 1.2) * s, z + R_(-1.2, 1.2) * s], [0, 0, 0], [r, r * .8, r], i % 2 ? [.20, .42, .12] : [.30, .50, .16]); }
+    }
+    if (distOutside(x, z) < 60) cs.push({ x, z, r: .5 * s });
+  }
+  // Çalılar + çiçek
+  placed = 0; tries = 0;
+  while (placed < 220 && tries < 4000) {
+    tries++; const x = c0[0] + R_(-280, 280), z = c0[1] + R_(-280, 280), y = ok(x, z, 3, 32, WORLD.waterY + .8); if (y === null) continue; placed++;
+    const r = R_(.9, 1.8); B.add(Geo.sphere(5, 7), [x, y + r * .3, z], [0, 0, 0], [r * 1.3, r * .8, r * 1.3], rnd() < .5 ? [.20, .42, .12] : [.30, .50, .16]);
+    if (rnd() < .35) B.add(Geo.sphere(4, 5), [x + R_(-.3, .3), y + r * .75, z + R_(-.3, .3)], [0, 0, 0], [.2, .2, .2], rnd() < .5 ? [.95, .75, .25] : [.9, .4, .5]);
+  }
+  // Çim öbekleri (oynanan alan dahil)
+  placed = 0; tries = 0; const f = WORLD.flat;
+  while (placed < 2600 && tries < 12000) {
+    tries++; const x = R_(f.x0 - 120, f.x1 + 120), z = R_(f.z0 - 60, f.z1 + 60); const y = groundY(x, z); if (y < WORLD.waterY + .5 || slopeAt(x, z) > 34) continue; placed++;
+    const s = R_(.9, 1.7); B.add(Geo.grass(), [x, y, z], [0, R_(0, 360), 0], [s, s, s], [.30 + R_(0, .1), .52 + R_(0, .12), .16]);
+  }
+  // Kayalar
+  placed = 0; tries = 0;
+  while (placed < 120 && tries < 3000) {
+    tries++; const x = c0[0] + R_(-330, 330), z = c0[1] + R_(-330, 330); const y = ok(x, z, 4, 90, WORLD.waterY + .5); if (y === null) continue; placed++;
+    const s = R_(1.2, 5.5); B.add(Geo.rock(placed % 3 + 1), [x, y + s * .1, z], [0, R_(0, 360), 0], [s * R_(.9, 1.5), s * R_(.7, 1.2), s * R_(.9, 1.5)], [.46 + R_(0, .08), .44 + R_(0, .06), .40]);
+    if (distOutside(x, z) < 60) cs.push({ x, z, r: s * .55 });
+  }
+  // Sütunlar (yol boyunca, yıkık)
+  for (let i = 0; i < 10; i++) for (const sx of [-9, 9]) {
+    const z = 6 + i * 6, y = groundY(sx, z), broken = hash2(i, sx) > .6, hgt = broken ? R_(1.6, 3) : 4;
+    B.add(Geo.cyl(10), [sx, y + hgt / 2, z], [0, 0, broken ? R_(-6, 6) : 0], [1.4, hgt, 1.4], [.62, .62, .58]); cs.push({ x: sx, z, r: .8 });
+    if (!broken) B.add(Geo.box(), [sx, y + 4.1, z], [0, 0, 0], [1.8, .4, 1.8], [.5, .5, .47]);
+  }
+  // Yıkık gökdelenler, mesa'lar, makine iskeletleri, anten
+  placed = 0; tries = 0;
+  while (placed < 8 && tries < 900) {
+    tries++; const a = R_(0, 6.283), d = R_(110, 280), x = c0[0] + Math.cos(a) * d, z = c0[1] + Math.sin(a) * d; const y = ok(x, z, 70, 22); if (y === null) continue; placed++;
+    const hgt = R_(30, 75), w = R_(10, 17), yaw = R_(0, 360);
+    B.add(Geo.box(), [x, y + hgt / 2 - 1, z], [0, yaw, 0], [w, hgt, w * .8], [.55, .55, .52]);
+    for (let i = 0; i < 3; i++) B.add(Geo.box(), [x + R_(-w, w) * .3, y + hgt - 1 + R_(0, 5), z + R_(-w, w) * .3], [R_(-12, 12), R_(0, 90), R_(-12, 12)], [w * R_(.3, .5), R_(5, 11), w * R_(.3, .5)], [.5, .5, .48]);
+    B.add(Geo.sphere(6, 8), [x, y + 3, z], [0, 0, 0], [w * 1.2, 9, w * 1.1], [.22, .40, .14]);
+    B.add(Geo.sphere(6, 8), [x + w * .3, y + hgt * .5, z], [0, 0, 0], [w * .7, 11, w * .7], [.22, .40, .14]);
+  }
+  placed = 0; tries = 0; let antennaDone = false;
+  while (placed < 5 && tries < 900) {
+    tries++; const a = R_(0, 6.283), d = R_(190, 300), x = c0[0] + Math.cos(a) * d, z = c0[1] + Math.sin(a) * d; const y = groundY(x, z); if (y < WORLD.waterY + 1) continue; placed++;
+    const h = R_(25, 45), w = R_(28, 55);
+    B.add(Geo.cyl(14), [x, y + h * .5 - 6, z], [0, R_(0, 360), 0], [w, h + 6, w], [.58, .42, .32]); B.add(Geo.cyl(14), [x, y + h - 5.8, z], [0, 0, 0], [w * 1.02, .6, w * 1.02], [.25, .42, .15]);
+    if (!antennaDone) { antennaDone = true; const ty = y + h - 5.5;
+      B.add(Geo.box(), [x, ty + 20, z], [0, 0, 0], [1.2, 40, 1.2], [.42, .27, .17]); B.add(Geo.cyl(16), [x, ty + 36, z], [55, 25, 0], [14, .4, 14], [.42, .27, .17]); WORLD.beacon = [x, ty + 41, z]; }
+  }
+  placed = 0; tries = 0; const rust = [.42, .27, .17];
+  while (placed < 4 && tries < 600) {
+    tries++; const a = R_(0, 6.283), d = R_(80, 180), x = c0[0] + Math.cos(a) * d, z = c0[1] + Math.sin(a) * d; const y = ok(x, z, 24, 14); if (y === null || distOutside(x, z) > 130) continue; placed++;
+    const yaw = R_(0, 360), s = R_(1.2, 1.8), cy = Math.cos(yaw * DEG), sy = Math.sin(yaw * DEG);
+    const loc = (lx, ly, lz) => [x + (lx * cy + lz * sy) * s, y + ly * s, z + (-lx * sy + lz * cy) * s];
+    B.add(Geo.box(), loc(0, 3.2, 0), [0, yaw, 0], [1 * s, .8 * s, 16 * s], rust);
+    for (let r = 0; r < 7; r++) { const zz = -6 + r * 2, sz = 1 - Math.abs(r - 3) * .12;
+      for (let k = 0; k < 7; k++) { const an = k / 6 * Math.PI, px = Math.cos(an) * 3.4 * sz, py = 3.2 + Math.sin(an) * 3 * sz - 3 * sz + 2.2;
+        B.add(Geo.box(), loc(px, py, zz), [0, yaw, an / DEG - 90], [.45 * s, 1.5 * sz * s, .45 * s], rust); } }
+    B.add(Geo.box(), loc(0, 2.6, 9.2), [0, yaw, 0], [2.2 * s, 1.8 * s, 3.2 * s], rust);
+    for (let i = 0; i < 4; i++) B.add(Geo.box(), loc((i % 2 ? 1 : -1) * 2.2, 1.4, i < 2 ? 4.5 : -4.5), [0, yaw, (i % 2 ? 1 : -1) * 22], [.7 * s, 3.2 * s, .7 * s], rust);
+    (WORLD.cores = WORLD.cores || []).push(loc(0, 3, 0));
+  }
+  root.add(B.node('Scenery'));
+}
+
+// ===================== Efektler: kıvılcım, halka, bıçak izi, kaya parçaları =====================
+const FX = (() => {
+  const items = []; let layer = null;
+  const BLUE = [0.45, 0.85, 1.0], GOLD = [1.0, 0.8, 0.3], RED = [1.0, 0.3, 0.2], WHITE = [1, 1, 1];
+  function init(root) { layer = new Node('FX'); root.add(layer); }
+  function spawn(mesh, o) {
+    const n = new Node('fx', mesh); n.unlit = true; n.additive = o.additive !== false; n.color = o.color || BLUE; n.emis = [0, 0, 0];
+    n.p = o.p.slice(); n.s = (o.s0 || [1, 1, 1]).slice(); if (o.r) n.r = o.r.slice(); layer.add(n);
+    const it = Object.assign({ n, life: 0, max: o.dur || 0.4, v: [0, 0, 0], g: 0, s0: [1, 1, 1], s1: [1, 1, 1], a0: 1, spin: 0, lit: false }, o);
+    if (o.lit) { n.unlit = false; n.additive = false; n.alpha = 1; }
+    items.push(it); return it;
+  }
+  function ring(p, r0, r1, dur, color, thin, flat) {
+    spawn(thin ? MESH.ringThin : MESH.ring, { p: [p[0], p[1] + 0.08, p[2]], s0: [r0 * 2, 1, r0 * 2], s1: [r1 * 2, 1, r1 * 2], dur, color, a0: 0.9, r: flat || [0, 0, 0] });
+  }
+  function arc(p, yaw, radius, dur, color, tilt, width) { // yay: bıçak izi
+    spawn(MESH.arc, { p, s0: [radius * 1.6, 1, radius * 1.6], s1: [radius * 2.1, 1, radius * 2.1], dur, color: color || BLUE, a0: 0.85, r: [tilt || 0, yaw, 0] });
+  }
+  function sparks(p, n, speed, color, grav) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * 6.283, e = Math.random() * 1.4 - 0.2, sp = speed * (0.4 + Math.random() * 0.8);
+      spawn(MESH.box, { p, s0: [0.07, 0.07, 0.22], s1: [0.02, 0.02, 0.06], dur: 0.35 + Math.random() * 0.35, color, v: [Math.cos(a) * sp, Math.sin(e) * sp + 1, Math.sin(a) * sp], g: grav === undefined ? -9 : grav, a0: 1, face: true });
+    }
+  }
+  function debris(p, n, power) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * 6.283, sp = power * (0.4 + Math.random() * 0.8), s = 0.12 + Math.random() * 0.28;
+      spawn(MESH.box, { p: [p[0] + Math.cos(a) * 1.2, p[1] + 0.2, p[2] + Math.sin(a) * 1.2], s0: [s, s, s], s1: [s * .6, s * .6, s * .6], dur: 0.9 + Math.random() * 0.5, color: [0.42 + Math.random() * .1, 0.4, 0.36], v: [Math.cos(a) * sp * .5, 3 + Math.random() * power * .5, Math.sin(a) * sp * .5], g: -16, lit: true, spin: 6, a0: 1 });
+    }
+  }
+  function vortex(p, dur, radius, color) { // yükselen girdap parçacıkları
+    for (let i = 0; i < 34; i++) {
+      const a = i / 34 * 6.283, d = radius * (0.5 + Math.random() * .6);
+      spawn(MESH.box, { p: [p[0] + Math.cos(a) * d, p[1] + 0.1, p[2] + Math.sin(a) * d], s0: [.12, .5, .12], s1: [.03, 1.2, .03], dur: dur * (0.7 + Math.random() * .5), color, v: [0, 5 + Math.random() * 4, 0], orbit: { cx: p[0], cz: p[2], a, d, w: 7 + Math.random() * 3 }, a0: .9 });
+    }
+  }
+  function update(dt) {
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i]; it.life += dt; const t = it.life / it.max;
+      if (t >= 1) { layer.remove(it.n); items.splice(i, 1); continue; }
+      const n = it.n;
+      if (it.orbit) { it.orbit.a += it.orbit.w * dt; n.p[0] = it.orbit.cx + Math.cos(it.orbit.a) * it.orbit.d; n.p[2] = it.orbit.cz + Math.sin(it.orbit.a) * it.orbit.d; n.p[1] += it.v[1] * dt; }
+      else { it.v[1] += it.g * dt; n.p[0] += it.v[0] * dt; n.p[1] += it.v[1] * dt; n.p[2] += it.v[2] * dt; }
+      if (it.lit) { const gy = groundY(n.p[0], n.p[2]); if (n.p[1] < gy + .05) { n.p[1] = gy + .05; it.v[0] *= .5; it.v[2] *= .5; it.v[1] = Math.abs(it.v[1]) * .2; } n.r[0] += it.spin * dt; n.r[2] += it.spin * dt; }
+      for (let k = 0; k < 3; k++) n.s[k] = it.s0[k] + (it.s1[k] - it.s0[k]) * t;
+      if (!it.lit) n.alpha = it.a0 * (1 - t) * (1 - t * 0.3); else n.alpha = 1;
+      if (it.face && (it.v[0] || it.v[2])) { n.r[1] = Math.atan2(it.v[0], it.v[2]); n.r[0] = -Math.atan2(it.v[1], Math.hypot(it.v[0], it.v[2])); }
+    }
+  }
+  return { init, ring, arc, sparks, debris, vortex, update, spawn, BLUE, GOLD, RED, WHITE };
+})();
+
+// ===================== Girdi: klavye+fare ve DualSense/Xbox (otomatik geçiş) =====================
+const Input = (() => {
+  const keys = {}, pressedKeys = {}; let mdx = 0, mdy = 0, mouseL = false, mouseR = false;
+  const ev = { attack: false, special: false, dodge: false, absorb: false, sprintPress: false, interact: false, pause: false, map: false, navUp: false, navDown: false, navLeft: false, navRight: false, confirm: false, back: false };
+  let padPrev = [], device = 'kb', locked = false;
+  const out = { move: [0, 0], look: [0, 0], sprintHeld: false, device: 'kb', ev };
+  const cvs = () => document.getElementById('c');
+  addEventListener('keydown', e => { if (e.repeat) return; keys[e.code] = true; pressedKeys[e.code] = true; device = 'kb';
+    if (['Space', 'Tab', 'ArrowUp', 'ArrowDown'].includes(e.code)) e.preventDefault(); });
+  addEventListener('keyup', e => { keys[e.code] = false; });
+  addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+  addEventListener('mousemove', e => { if (document.pointerLockElement === cvs()) { mdx += e.movementX; mdy += e.movementY; device = 'kb'; } });
+  addEventListener('mousedown', e => { if (!Game.running) return; if (document.pointerLockElement !== cvs()) { cvs().requestPointerLock && cvs().requestPointerLock(); return; }
+    if (e.button === 0) { ev.attack = true; mouseL = true; } if (e.button === 2) { ev.special = true; mouseR = true; } device = 'kb'; });
+  addEventListener('mouseup', e => { if (e.button === 0) mouseL = false; if (e.button === 2) mouseR = false; });
+  addEventListener('contextmenu', e => e.preventDefault());
+  const dz = (v, d = 0.18) => Math.abs(v) < d ? 0 : (v - Math.sign(v) * d) / (1 - d);
+  function poll(dt) {
+    dt = Math.min(0.05, dt || 0.016);
+    // Klavye
+    let mx = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0), my = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0);
+    let lx = 0, ly = 0;
+    if (mx || my) { const l = Math.hypot(mx, my); mx /= l; my /= l; }
+    lx = mdx * 0.0022 * Settings.mouse + ((keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0)) * 2.2 * dt; ly = mdy * 0.0022 * Settings.mouse + ((keys.ArrowDown ? 1 : 0) - (keys.ArrowUp ? 1 : 0)) * 1.4 * dt; mdx = mdy = 0;
+    out.sprintHeld = !!(keys.ShiftLeft || keys.ShiftRight || keys.ControlLeft);
+    if (pressedKeys.Space) ev.dodge = true; if (pressedKeys.KeyQ || pressedKeys.KeyF) ev.absorb = true;
+    if (pressedKeys.KeyE) ev.interact = true; if (pressedKeys.Escape || pressedKeys.KeyP) ev.pause = true;
+    if (pressedKeys.ArrowUp || pressedKeys.KeyW) ev.navUp = true; if (pressedKeys.ArrowDown || pressedKeys.KeyS) ev.navDown = true; if (pressedKeys.ArrowLeft || pressedKeys.KeyA) ev.navLeft = true; if (pressedKeys.ArrowRight || pressedKeys.KeyD) ev.navRight = true; if (pressedKeys.Enter) ev.confirm = true; if (pressedKeys.Tab || pressedKeys.KeyM) ev.map = true;
+    if (pressedKeys.KeyJ) ev.attack = true; if (pressedKeys.KeyK) ev.special = true;
+    for (const k in pressedKeys) delete pressedKeys[k];
+    // Kumanda
+    let pads = [], pad = null;
+    if (!out.padBlocked) { try { pads = navigator.getGamepads ? navigator.getGamepads() : []; } catch (e) { out.padBlocked = true; const t = document.getElementById('toast'); if (t) { t.textContent = 'Kumanda bu önizlemede kapalı. Dosyayı indirip Chrome veya Edge ile aç.'; t.style.opacity = 1; setTimeout(() => t.style.opacity = 0, 8000); } } }
+    for (const p of pads) if (p && p.connected) { pad = p; break; }
+    if (pad) {
+      const b = i => pad.buttons[i] && pad.buttons[i].pressed, was = i => padPrev[i];
+      const edge = i => b(i) && !was(i);
+      const rad = (x, y, d) => { const m = Math.hypot(x, y); if (m < d) return [0, 0]; const k = Math.min(1, (m - d) / (1 - d)) / m; return [x * k, y * k]; };
+      const [sx, sy0] = rad(pad.axes[0] || 0, pad.axes[1] || 0, 0.2), sy = -sy0; const [rx0, ry0] = rad(pad.axes[2] || 0, pad.axes[3] || 0, 0.15);
+      const rx = rx0 * Math.abs(rx0) * 0.6 + rx0 * 0.4, ry = ry0 * Math.abs(ry0) * 0.6 + ry0 * 0.4;
+      const r2 = (pad.buttons[7] ? pad.buttons[7].value : 0) > 0.45;
+      const any = sx || sy || rx || ry || pad.buttons.some(x => x.pressed);
+      if (any) device = 'pad';
+      if (device === 'pad') {
+        if (Math.hypot(sx, sy) > 0) { mx = sx; my = sy; }
+        lx += rx * 2.6 * dt * Settings.mouse; ly += ry * 1.8 * dt * Settings.mouse;
+        if (r2 && !padPrev.r2) ev.attack = true;
+        if (edge(3)) ev.special = true;            // Üçgen
+        if (edge(1)) ev.dodge = true;              // Yuvarlak
+        if (edge(2)) ev.absorb = true;             // Kare
+        if (edge(0)) ev.interact = true;           // Çarpı
+        if (edge(10)) ev.sprintPress = true;       // L3
+        if (edge(9)) ev.pause = true; if (edge(8)) ev.map = true;
+        if (edge(12) || (sy > 0.6 && !(padPrev.nu))) ev.navUp = true; if (edge(13) || (sy < -0.6 && !(padPrev.nd))) ev.navDown = true; if (edge(14) || (sx < -0.6 && !padPrev.nl)) ev.navLeft = true; if (edge(15) || (sx > 0.6 && !padPrev.nr)) ev.navRight = true;
+        if (edge(0)) ev.confirm = true; if (edge(1)) ev.back = true;
+      }
+      padPrev = pad.buttons.map(x => x.pressed); padPrev.r2 = r2; padPrev.nu = sy > 0.6; padPrev.nd = sy < -0.6; padPrev.nl = sx < -0.6; padPrev.nr = sx > 0.6;
+    }
+    out.move = [mx, my]; out.look = [lx, ly]; out.device = device;
+    return out;
+  }
+  function clear() { for (const k in ev) ev[k] = false; }
+  const rumble = (a, b, ms) => { if (out.padBlocked) return; try { const pads = navigator.getGamepads(); for (const p of pads) if (p && p.vibrationActuator) p.vibrationActuator.playEffect('dual-rumble', { duration: ms, strongMagnitude: a, weakMagnitude: b }); } catch (e) { } };
+  addEventListener('gamepadconnected', e => { const t = document.getElementById('toast'); if (t) { t.textContent = 'Kumanda bağlandı: ' + e.gamepad.id.slice(0, 40); t.style.opacity = 1; setTimeout(() => t.style.opacity = 0, 3500); } });
+  return { poll, clear, ev, rumble, get device() { return device; } };
+})();
+
+const Settings = (() => {
+  const d = { vol: 0.8, mouse: 1.0, voice: false };
+  try { Object.assign(d, JSON.parse(localStorage.getItem('senol_settings') || '{}')); } catch (e) { }
+  d.save = () => { try { localStorage.setItem('senol_settings', JSON.stringify({ vol: d.vol, mouse: d.mouse, voice: d.voice })); } catch (e) { } };
+  return d;
+})();
+
+// Tuş simgeleri: kumanda → şekiller, klavye → tuş adları
+function glyph(name) {
+  const pad = Input.device === 'pad';
+  const G = { attack: pad ? 'R2' : 'Sol Tık', special: pad ? '△' : 'Sağ Tık', dodge: pad ? '○' : 'Boşluk', absorb: pad ? '□' : 'Q', interact: pad ? '✕' : 'E',
+    move: pad ? 'Sol Çubuk' : 'W A S D', look: pad ? 'Sağ Çubuk' : 'Fare', sprint: pad ? 'L3 (bas + it)' : 'Shift', pause: pad ? 'Start' : 'Esc', map: pad ? 'Select' : 'Tab' };
+  return G[name] || name;
+}
+
+// ===================== Ses: kodla üretilen efektler + Vael seslendirme (tarayıcı TTS) =====================
+const Snd = (() => {
+  let ctx = null, master = null, noise = null, wind = null;
+  function init() {
+    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+    try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+    master = ctx.createGain(); master.gain.value = Settings.vol; master.connect(ctx.destination);
+    const len = ctx.sampleRate; noise = ctx.createBuffer(1, len, ctx.sampleRate); const d = noise.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    // Rüzgar
+    const src = ctx.createBufferSource(); src.buffer = noise; src.loop = true; const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 380;
+    const g = ctx.createGain(); g.gain.value = 0.06; src.connect(f); f.connect(g); g.connect(master); src.start();
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 0.12; const lg = ctx.createGain(); lg.gain.value = 160; lfo.connect(lg); lg.connect(f.frequency); lfo.start();
+    wind = g;
+  }
+  function setVol() { if (master) master.gain.value = Settings.vol; }
+  function tone(freq, dur, type, vol, slide, delay) {
+    if (!ctx) return; const t = ctx.currentTime + (delay || 0), o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, freq * slide), t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function burst(dur, f0, f1, vol, q, delay) {
+    if (!ctx) return; const t = ctx.currentTime + (delay || 0), s = ctx.createBufferSource(); s.buffer = noise;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = q || 1; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.25); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.05);
+  }
+  const S = {
+    slash() { burst(0.22, 900, 3200, 0.35, 0.8); },
+    sweep() { burst(0.3, 500, 2400, 0.4, 0.7); tone(180, 0.2, 'sawtooth', 0.05, 0.5); },
+    slam() { burst(0.5, 300, 70, 0.7, 0.6, 0.18); tone(70, 0.5, 'sine', 0.6, 0.4, 0.2); },
+    spin() { burst(0.55, 400, 2600, 0.45, 0.6); tone(220, 0.5, 'triangle', 0.08, 2.2); },
+    burst() { tone(110, 1.1, 'sawtooth', 0.22, 3.5); burst(1.0, 200, 4000, 0.6, 0.5); tone(55, 1.2, 'sine', 0.6, 0.5, 0.3); },
+    hit() { tone(140, 0.15, 'square', 0.25, 0.4); burst(0.12, 1500, 400, 0.3, 1); },
+    shatter() { burst(0.5, 4500, 900, 0.5, 2); tone(1400, 0.3, 'triangle', 0.15, 0.5); tone(2100, 0.25, 'triangle', 0.1, 0.5, 0.05); },
+    absorb() { tone(520, 0.4, 'sine', 0.18, 1.8); tone(780, 0.35, 'sine', 0.1, 1.6, 0.05); },
+    absorbOk() { tone(880, 0.6, 'sine', 0.3, 1.5); tone(1320, 0.6, 'sine', 0.2, 1.5, 0.08); burst(0.4, 3000, 8000, 0.3, 2); },
+    roll() { burst(0.4, 700, 200, 0.25, 0.6); },
+    hurt() { tone(120, 0.3, 'sawtooth', 0.3, 0.5); burst(0.25, 600, 200, 0.4, 1); },
+    telegraph() { tone(300, 0.5, 'sawtooth', 0.07, 1.6); },
+    stomp() { tone(60, 0.45, 'sine', 0.8, 0.5); burst(0.4, 200, 60, 0.7, 0.5); },
+    roar() { tone(90, 0.9, 'sawtooth', 0.25, 0.6); burst(0.9, 250, 90, 0.4, 0.8); },
+    key() { tone(660, 0.25, 'sine', 0.25); tone(990, 0.5, 'sine', 0.25, 1, 0.12); tone(1320, 0.7, 'sine', 0.2, 1, 0.25); },
+    gate() { tone(50, 2.2, 'sawtooth', 0.25, 0.7); burst(2.2, 200, 80, 0.5, 0.5); },
+    seal() { tone(440, 0.8, 'sine', 0.2); tone(660, 0.8, 'sine', 0.15, 1, 0.1); tone(880, 1.0, 'sine', 0.12, 1, 0.2); },
+    vael() { tone(1040, 0.18, 'sine', 0.06); tone(1560, 0.22, 'sine', 0.04, 1, 0.08); },
+    ui() { tone(700, 0.08, 'square', 0.08); },
+    die() { tone(160, 1.2, 'sawtooth', 0.3, 0.2); }
+  };
+  function play(n) { if (!ctx) return; const f = S[n]; if (f) f(); }
+  // Vael sesi (tarayıcının Türkçe sesi varsa)
+  function speak(text) {
+    if (!Settings.voice || !('speechSynthesis' in window)) return;
+    try {
+      speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'tr-TR'; u.pitch = 0.7; u.rate = 0.9; u.volume = Settings.vol;
+      const v = speechSynthesis.getVoices().find(x => /^tr/i.test(x.lang)); if (v) u.voice = v; speechSynthesis.speak(u);
+    } catch (e) { }
+  }
+  return { init, play, speak, setVol };
+})();
+
+// ===================== Senol: model, animasyon, kontrol =====================
+const ATTACKS = [
+  { id: 'slash_a', kind: 'light', dur: 0.32, hit: 0.11, range: 3.0, arc: 130, dmg: 14, lunge: 2.2, side: 1, snd: 'slash' },
+  { id: 'slash_b', kind: 'light', dur: 0.32, hit: 0.11, range: 3.0, arc: 130, dmg: 14, lunge: 2.2, side: -1, snd: 'slash' },
+  { id: 'sweep', kind: 'sweep', dur: 0.46, hit: 0.17, range: 3.5, arc: 210, dmg: 17, lunge: 1.6, side: 1, snd: 'sweep' },
+  { id: 'slam', kind: 'heavy', dur: 0.66, hit: 0.36, range: 3.6, arc: 150, dmg: 30, lunge: 1.0, side: 1, snd: 'slam', heavy: true },
+  { id: 'spin', kind: 'spin', dur: 0.62, hit: 0.22, range: 3.4, arc: 360, dmg: 22, lunge: 0.4, side: 1, snd: 'spin' }
+];
+
+function buildSenol() {
+  const root = new Node('Senol');
+  const cloth = hex(0x6a5f4e), cloak = hex(0x4a3f32), leather = hex(0x8a5f36), wrap = hex(0xa79a80), skin = hex(0x8c6b52);
+  const vis = pivot(root, 'Visual', [0, 0, 0]);
+  const hips = pivot(vis, 'Hips', [0, 0.95, 0]);
+  part(hips, MESH.cyl, 'Belt', [0, 0.04, 0], [0.5, 0.05, 0.36], leather);
+  part(hips, MESH.box, 'PouchL', [-0.3, -0.08, 0.1], [0.16, 0.2, 0.14], leather);
+  part(hips, MESH.box, 'PouchR', [0.28, -0.1, -0.06], [0.14, 0.16, 0.14], leather);
+  const tat = part(hips, MESH.box, 'Tatter', [0, -0.2, 0.15], [0.3, 0.34, 0.04], cloth); tat.r = [-6 * DEG, 0, 3 * DEG];
+  for (const side of [-1, 1]) {
+    const n = side < 0 ? 'L' : 'R', leg = pivot(hips, 'Leg' + n, [0.16 * side, 0, 0]);
+    part(leg, MESH.box, 'Thigh', [0, -0.22, 0], [0.21, 0.46, 0.23], cloth);
+    const shin = pivot(leg, 'Shin' + n, [0, -0.45, 0]);
+    part(shin, MESH.box, 'ShinMesh', [0, -0.2, 0], [0.17, 0.4, 0.19], wrap);
+    part(shin, MESH.box, 'Boot', [0, -0.4, 0.05], [0.22, 0.16, 0.38], cloak);
+  }
+  const torso = pivot(hips, 'Torso', [0, 0.05, 0]);
+  part(torso, MESH.sphere, 'Chest', [0, 0.32, 0], [0.6, 0.78, 0.4], cloth);
+  const sa = part(torso, MESH.box, 'StrapA', [0, 0.35, 0.17], [0.08, 0.8, 0.04], leather); sa.r = [0, 0, 35 * DEG];
+  const sb = part(torso, MESH.box, 'StrapB', [0, 0.35, 0.17], [0.08, 0.8, 0.04], leather); sb.r = [0, 0, -35 * DEG];
+  part(torso, MESH.box, 'Shawl', [0, 0.62, 0], [0.78, 0.12, 0.46], cloak);
+  const head = pivot(torso, 'Head', [0, 0.72, 0]);
+  part(head, MESH.sphere, 'Hood', [0, 0.14, -0.01], [0.38, 0.42, 0.4], cloak);
+  part(head, MESH.box, 'Mask', [0, 0.09, 0.15], [0.24, 0.14, 0.08], wrap);
+  part(head, MESH.box, 'Eyes', [0, 0.19, 0.165], [0.2, 0.035, 0.03], [0.45, 0.85, 1], { unlit: true, emis: [0.4, 0.9, 1] });
+  for (const side of [-1, 1]) {
+    const n = side < 0 ? 'L' : 'R', arm = pivot(torso, 'Arm' + n, [0.37 * side, 0.6, 0]);
+    part(arm, MESH.box, 'Upper', [0, -0.17, 0], [0.14, 0.36, 0.14], cloth);
+    const fore = pivot(arm, 'Fore' + n, [0, -0.34, 0]);
+    part(fore, MESH.box, 'ForeMesh', [0, -0.16, 0], [0.13, 0.34, 0.13], wrap);
+    part(fore, MESH.sphere, 'Hand', [0, -0.35, 0], [0.12, 0.12, 0.12], leather);
+    if (side > 0) part(arm, MESH.box, 'Emblem', [0.05, 0.05, 0], [0.1, 0.12, 0.2], [0.8, 0.62, 0.22], { emis: [0.3, 0.2, 0.05] });
+  }
+  // Pelerin zinciri + yan kanatlar
+  let cp = pivot(torso, 'Cloak0', [0, 0.64, -0.2]); const widths = [0.62, 0.7, 0.78, 0.88];
+  for (let i = 0; i < 4; i++) { part(cp, MESH.box, 'CloakMesh', [0, -0.17, 0], [widths[i], 0.36, 0.05], i % 2 ? cloth : cloak); if (i < 3) cp = pivot(cp, 'Cloak' + (i + 1), [0, -0.34, 0]); }
+  for (const side of [-1, 1]) { const w = pivot(torso, side < 0 ? 'WingL' : 'WingR', [0.3 * side, 0.56, -0.18]); const m = part(w, MESH.box, 'WingMesh', [0.05 * side, -0.28, 0], [0.3, 0.56, 0.04], cloak); m.r = [0, 0, 6 * side * DEG]; }
+  // Gölge
+  const sh = part(root, MESH.sphere, 'Shadow', [0, 0.03, 0], [1.1, 0.02, 1.1], [0, 0, 0], { alpha: 0.4, unlit: true }); sh.noAnim = true;
+  // Tırpan
+  const sc = pivot(root, 'Scythe', [0.45, 1.0, 0.3]); sc.r = [-84 * DEG, 0, 180 * DEG];
+  part(sc, MESH.box, 'Handle', [0, 0, 0], [0.06, 0.06, 1.7], hex(0x332b24));
+  let px = 0, py = 0, pz = 0.85;
+  for (let i = 0; i < 5; i++) { const phi = i * 14 * DEG, dy = Math.cos(phi), dz = -Math.sin(phi), len = 0.17;
+    const seg = part(sc, MESH.box, 'Blade' + i, [px, py + dy * len * 0.5, pz + dz * len * 0.5], [0.025, 0.07, len * 1.08], [0.5, 0.88, 1], { unlit: true, emis: [0.4, 0.85, 1] });
+    seg.r = [phi - Math.PI / 2, 0, 0]; py += dy * len; pz += dz * len; }
+  root._scythe = sc; root._tip = [px, py, pz];
+  return root;
+}
+
+class SenolActor {
+  constructor(scene) {
+    this.node = buildSenol(); scene.add(this.node);
+    const f = n => this.node.find(n);
+    this.v = { hips: f('Visual/Hips'), torso: f('Visual/Hips/Torso'), head: f('Visual/Hips/Torso/Head'), armL: f('Visual/Hips/Torso/ArmL'), foreL: f('Visual/Hips/Torso/ArmL/ForeL'), armR: f('Visual/Hips/Torso/ArmR'), foreR: f('Visual/Hips/Torso/ArmR/ForeR'),
+      legL: f('Visual/Hips/LegL'), shinL: f('Visual/Hips/LegL/ShinL'), legR: f('Visual/Hips/LegR'), shinR: f('Visual/Hips/LegR/ShinR'), wingL: f('Visual/Hips/Torso/WingL'), wingR: f('Visual/Hips/Torso/WingR'), vis: f('Visual') };
+    this.cloak = []; let c = f('Visual/Hips/Torso/Cloak0'); for (let i = 0; i < 4; i++) { this.cloak.push(c); c = c && c.children.find(x => x.name === 'Cloak' + (i + 1)); }
+    this.scythe = this.node._scythe; this.hipsBase = this.v.hips.p.slice();
+    this.pos = [0, 0, 0]; this.yaw = 0; this.vel = [0, 0, 0]; this.hp = 100; this.maxHp = 100; this.res = 0; this.resMax = 100;
+    this.state = 'move'; this.t = 0; this.dur = 0; this.atk = null; this.hitDone = false; this.lastAtk = -1; this.sprint = false; this.speed01 = 0;
+    this.phase = 0; this.yawRate = 0; this.prevYaw = 0; this.swaySm = 0; this.stowed = false; this.dodgeDir = [0, 0, 1]; this.invuln = 0; this.hurtT = 0; this.dead = false;
+    this.absorbCd = 0; this.absorbHit = false; this.lightSide = 1; this.buffered = null; this.sp = [0.45, 1.0, 0.3]; this.sr = [-84 * DEG, 0, 180 * DEG]; this.spawn = [0, 0, 0];
+    this.comboKills = 0;
+  }
+  get dir() { return [Math.sin(this.yaw), Math.cos(this.yaw)]; }
+  place(p, yaw) { this.pos = [p[0], groundY(p[0], p[2]), p[2]]; this.yaw = yaw || 0; this.vel = [0, 0, 0]; this.state = 'move'; this.dead = false; this.hp = this.maxHp; }
+  busy() { return this.state === 'attack' || this.state === 'absorb' || this.state === 'dodge' || this.state === 'burst'; }
+
+  startAttack(a, aim) {
+    this.state = 'attack'; this.atk = a; this.t = 0; this.dur = a.dur; this.hitDone = false; this.sprint = false; this.stowed = false;
+    if (a.kind === 'light') this.lightSide = a.side;
+    if (aim) this.yaw = Math.atan2(aim[0] - this.pos[0], aim[2] - this.pos[2]);
+    Snd.play(a.snd); GameEvents.emit('action', a.id);
+  }
+  randomAttack(aim) { let i; do { i = Math.floor(Math.random() * ATTACKS.length); } while (i === this.lastAtk && ATTACKS.length > 1); this.lastAtk = i; this.startAttack(ATTACKS[i], aim); }
+  startSpecial(aim) {
+    if (this.res < this.resMax) { GameEvents.emit('vael', 'special_not_ready'); Snd.play('ui'); return; }
+    this.res = 0; this.state = 'burst'; this.t = 0; this.dur = 0.95; this.hitDone = false; this.sprint = false; this.stowed = false;
+    if (aim) this.yaw = Math.atan2(aim[0] - this.pos[0], aim[2] - this.pos[2]);
+    Snd.play('burst'); GameEvents.emit('action', 'burst');
+  }
+  startDodge(inp) {
+    const m = Math.hypot(inp[0], inp[1]); let d = this.dir;
+    if (m > 0.2) { const cy = Game.cam.yaw; const fx = Math.sin(cy), fz = Math.cos(cy), rx = Math.cos(cy), rz = -Math.sin(cy); let dx = rx * inp[0] + fx * inp[1], dz = rz * inp[0] + fz * inp[1]; const l = Math.hypot(dx, dz); d = [dx / l, dz / l]; }
+    this.dodgeDir = [d[0], 0, d[1]]; this.yaw = Math.atan2(d[0], d[1]); this.state = 'dodge'; this.t = 0; this.dur = 0.5; this.sprint = false; this.stowed = false;
+    this.invuln = 0.4; Snd.play('roll'); GameEvents.emit('action', 'dodge'); FX.sparks([this.pos[0], this.pos[1] + .1, this.pos[2]], 6, 3, [0.7, 0.65, 0.5], -3);
+  }
+  startAbsorb(aim) {
+    if (this.absorbCd > 0) return; this.state = 'absorb'; this.t = 0; this.dur = 0.55; this.absorbHit = false; this.sprint = false; this.stowed = false; this.absorbCd = 0.9;
+    if (aim) this.yaw = Math.atan2(aim[0] - this.pos[0], aim[2] - this.pos[2]);
+    Snd.play('absorb'); GameEvents.emit('action', 'absorb');
+    const p = [this.pos[0] + Math.sin(this.yaw) * 1.0, this.pos[1] + 1.25, this.pos[2] + Math.cos(this.yaw) * 1.0]; FX.ring(p, .3, 1.2, .45, FX.BLUE, true, [90 * DEG, this.yaw, 0]);
+  }
+
+  // Düşmanlara vuruş: arc derece, range metre
+  strike(a, dmg, range, arc, power) {
+    const hits = []; const d = this.dir;
+    for (const e of Game.enemies) {
+      if (e.dead) continue; const dx = e.pos[0] - this.pos[0], dz = e.pos[2] - this.pos[2], dist = Math.hypot(dx, dz) - e.radius;
+      if (dist > range) continue;
+      if (arc < 359) { const dot = (dx * d[0] + dz * d[1]) / (Math.hypot(dx, dz) || 1); if (dot < Math.cos(arc / 2 * DEG)) continue; }
+      hits.push(e);
+    }
+    for (const e of hits) { const brittle = e.isBrittle(); e.hit(dmg * (brittle ? 1.5 : 1), this.pos, power || 1, brittle); this.res = Math.min(this.resMax, this.res + (a && a.heavy ? 14 : 8)); }
+    if (hits.length) { Game.hitStop(0.055); Game.shake(a && a.heavy ? 0.35 : 0.18); Input.rumble(0.4, 0.5, 90); }
+    return hits.length;
+  }
+  hurt(dmg, from) {
+    if (this.dead || this.invuln > 0 || this.state === 'burst') return false;
+    this.hp -= dmg; this.hurtT = 0.4; this.invuln = 0.5; Snd.play('hurt'); Game.shake(0.4); Game.flash('hurt'); Input.rumble(0.8, 0.8, 200);
+    const dx = this.pos[0] - from[0], dz = this.pos[2] - from[2], l = Math.hypot(dx, dz) || 1; this.vel[0] += dx / l * 5; this.vel[2] += dz / l * 5;
+    if (this.state === 'attack') { this.state = 'move'; }
+    if (this.hp <= 0) { this.hp = 0; this.dead = true; this.state = 'dead'; this.t = 0; Snd.play('die'); GameEvents.emit('died'); }
+    return true;
+  }
+  heal(a) { this.hp = Math.min(this.maxHp, this.hp + a); }
+
+  update(dt, inp) {
+    const ev = Input.ev; this.t += dt; this.invuln = Math.max(0, this.invuln - dt); this.hurtT = Math.max(0, this.hurtT - dt); this.absorbCd = Math.max(0, this.absorbCd - dt);
+    if (this.state === 'dead') { this.animate(dt, inp); return; }
+    const mag = Math.min(1, Math.hypot(inp.move[0], inp.move[1]));
+    const aim = Game.nearestEnemy(this.pos, 7, this.dir, 110);
+    const aimP = aim ? aim.pos : null;
+    // Girdi olayları
+    if (Game.canAct()) {
+      if (ev.dodge && this.state !== 'dodge' && !(this.state === 'attack' && this.t < 0.08)) this.startDodge(inp.move);
+      else if (ev.absorb && !this.busy()) this.startAbsorb(aimP);
+      else if (ev.special && (!this.busy() || (this.state === 'attack' && this.t > this.dur * 0.6))) this.startSpecial(aimP);
+      else if (ev.attack) { if (!this.busy() || (this.state === 'attack' && this.t > this.dur * 0.55)) this.randomAttack(aimP); else if (this.busy()) this.buffered = 'attack'; }
+      if (ev.sprintPress && mag > 0.1) this.sprint = !this.sprint;
+    }
+    if (mag <= 0.1 && Input.device === 'pad') this.sprint = false;
+    const sprintNow = (this.sprint || inp.sprintHeld) && mag > 0.1 && !this.busy();
+    // Duruma göre hareket
+    let want = [0, 0], speed = 0;
+    if (this.state === 'move' || this.state === 'dead') {
+      if (this.buffered === 'attack' && Game.canAct()) { this.buffered = null; this.randomAttack(aimP); }
+      if (mag > 0.05) { const cy = Game.cam.yaw, fx = Math.sin(cy), fz = Math.cos(cy), rx = Math.cos(cy), rz = -Math.sin(cy);
+        let dx = rx * inp.move[0] + fx * inp.move[1], dz = rz * inp.move[0] + fz * inp.move[1]; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
+        speed = (sprintNow ? 7.5 : 4.0) * Math.min(1, mag * 1.25); want = [dx * speed, dz * speed];
+        const ty = Math.atan2(dx, dz); let dy = ty - this.yaw; while (dy > Math.PI) dy -= 2 * Math.PI; while (dy < -Math.PI) dy += 2 * Math.PI; this.yaw += dy * Math.min(1, dt * (sprintNow ? 9 : 12)); }
+      const k = 1 - Math.exp(-(mag > 0.05 ? 12 : 9) * dt); this.vel[0] += (want[0] - this.vel[0]) * k; this.vel[2] += (want[1] - this.vel[2]) * k;
+      this.sprintActive = sprintNow;
+    } else if (this.state === 'attack') {
+      const u = this.t / this.dur, lung = this.atk.lunge * (u < 0.5 ? 1 : 0) * (1 - u); const d = this.dir; this.vel[0] = d[0] * lung * 3; this.vel[2] = d[1] * lung * 3; this.sprintActive = false;
+      if (!this.hitDone && this.t >= this.atk.hit) { this.hitDone = true; this.doAttackFx(); this.strike(this.atk, this.atk.dmg, this.atk.range, this.atk.arc, this.atk.heavy ? 1.6 : 1); }
+      if (this.t >= this.dur) { this.state = 'move'; }
+    } else if (this.state === 'burst') {
+      this.vel[0] = this.vel[2] = 0; this.sprintActive = false;
+      if (!this.hitDone && this.t >= 0.35) { this.hitDone = true; this.doBurstFx(); this.strike({ heavy: true }, 75, 9, 360, 2.2); }
+      if (this.t >= this.dur) this.state = 'move';
+    } else if (this.state === 'absorb') {
+      this.vel[0] *= 0.8; this.vel[2] *= 0.8; this.sprintActive = false;
+      if (!this.absorbHit && this.t > 0.1 && this.t < 0.45) {
+        const d = this.dir; let tgt = null;
+        for (const e of Game.enemies) { if (e.dead || !e.isAbsorbable()) continue; const dx = e.pos[0] - this.pos[0], dz = e.pos[2] - this.pos[2], dist = Math.hypot(dx, dz) - e.radius;
+          if (dist < 4.5 && (dx * d[0] + dz * d[1]) / (Math.hypot(dx, dz) || 1) > 0.35) { tgt = e; break; } }
+        if (tgt) { this.absorbHit = true; tgt.absorbed(); this.res = Math.min(this.resMax, this.res + 28); this.invuln = 0.4; Game.slowmo(0.35, 0.35); Game.shake(0.3); Snd.play('absorbOk');
+          const p = [this.pos[0] + d[0] * 1.2, this.pos[1] + 1.25, this.pos[2] + d[1] * 1.2]; FX.ring(p, .4, 3.2, .4, FX.WHITE, false, [90 * DEG, this.yaw, 0]); FX.sparks(p, 40, 7, FX.BLUE, 0); GameEvents.emit('absorb_success'); }
+      }
+      if (this.t >= this.dur) this.state = 'move';
+    } else if (this.state === 'dodge') {
+      const u = Math.min(1, this.t / this.dur), sp = 5.5 / this.dur * (1.7 + (0.3 - 1.7) * u) * 0.78; this.vel[0] = this.dodgeDir[0] * sp; this.vel[2] = this.dodgeDir[2] * sp; this.sprintActive = false;
+      if (u > 0.2 && u < 0.9 && Math.random() < 0.5) FX.sparks([this.pos[0], this.pos[1] + .15, this.pos[2]], 1, 2, [0.6, 0.55, 0.4], -2);
+      if (this.t >= this.dur) { this.state = 'move'; this.vel[0] *= 0.3; this.vel[2] *= 0.3; }
+    }
+    // Konum güncelle + çarpışmalar
+    let nx = this.pos[0] + this.vel[0] * dt, nz = this.pos[2] + this.vel[2] * dt;
+    for (const c of WORLD.colliders) { const dx = nx - c.x, dz = nz - c.z, r = c.r + 0.45, d2 = dx * dx + dz * dz; if (d2 < r * r) { const d = Math.sqrt(d2) || 0.001; nx = c.x + dx / d * r; nz = c.z + dz / d * r; } }
+    for (const b of Game.blockers) { if (!b.active()) continue; if (nx > b.x0 && nx < b.x1 && nz > b.z0 && nz < b.z1) { if (this.pos[2] <= b.z0 + 0.5) nz = b.z0; else if (this.pos[2] >= b.z1 - 0.5) nz = b.z1; else nx = this.pos[0]; } }
+    for (const e of Game.enemies) { if (e.dead || e.ghost) continue; const dx = nx - e.pos[0], dz = nz - e.pos[2], r = e.radius + 0.45, d2 = dx * dx + dz * dz; if (d2 < r * r && this.state !== 'dodge') { const d = Math.sqrt(d2) || 0.001; nx = e.pos[0] + dx / d * r; nz = e.pos[2] + dz / d * r; } }
+    if (groundY(nx, nz) < WORLD.waterY + 0.4) { nx = this.pos[0]; nz = this.pos[2]; }
+    this.pos[0] = nx; this.pos[2] = nz; const gy = groundY(nx, nz); this.pos[1] = gy;
+    this.animate(dt, inp);
+  }
+
+  doAttackFx() {
+    const a = this.atk, d = this.dir, p = [this.pos[0], this.pos[1] + 1.15, this.pos[2]]; const side = a.side;
+    if (a.kind === 'light') FX.arc([p[0], p[1] + .05, p[2]], this.yaw, 1.9, 0.26, FX.BLUE, side * 18 * DEG);
+    else if (a.kind === 'sweep') { FX.arc([p[0], this.pos[1] + 0.55, p[2]], this.yaw, 2.3, 0.4, FX.BLUE, 0); FX.sparks([this.pos[0] + d[0] * 2.4, this.pos[1] + .2, this.pos[2] + d[1] * 2.4], 14, 5, FX.GOLD); }
+    else if (a.kind === 'heavy') { const q = [this.pos[0] + d[0] * 2.5, this.pos[1] + .1, this.pos[2] + d[1] * 2.5]; FX.ring(q, .4, 3.8, .5, FX.BLUE); FX.ring(q, .2, 2.4, .4, FX.WHITE, true); FX.debris(q, 12, 6); FX.sparks(q, 26, 8, FX.BLUE); Game.shake(0.45); Snd.play('stomp'); }
+    else if (a.kind === 'spin') { const g = [this.pos[0], this.pos[1] + 1.1, this.pos[2]]; FX.ring(g, 1, 4.4, .45, FX.BLUE, true); FX.ring([g[0], g[1] - .3, g[2]], .6, 3.6, .4, FX.WHITE, true); }
+  }
+  doBurstFx() {
+    const g = [this.pos[0], this.pos[1] + .1, this.pos[2]];
+    FX.ring(g, .5, 9, .7, FX.BLUE); FX.ring(g, .3, 6.5, .55, FX.WHITE, true); FX.ring([g[0], g[1] + 1, g[2]], 1, 8, .6, FX.BLUE, true); FX.vortex(g, 1.2, 3.2, FX.BLUE);
+    FX.debris(g, 26, 9); FX.sparks([g[0], g[1] + 1, g[2]], 60, 12, FX.BLUE, -2); Game.shake(0.8); Game.hitStop(0.09); Input.rumble(1, 1, 300);
+  }
+
+  // ---- Animasyon (SenolBodyAnimator'un JS karşılığı) ----
+  animate(dt, inp) {
+    const v = this.v, vel = this.vel, speed = Math.hypot(vel[0], vel[2]);
+    this.speed01 += (Math.min(1, speed / 7.5) - this.speed01) * (1 - Math.exp(-10 * dt));
+    const yawNow = this.yaw; let dy = yawNow - this.prevYaw; while (dy > Math.PI) dy -= 2 * Math.PI; while (dy < -Math.PI) dy += 2 * Math.PI; this.yawRate += (dy / Math.max(dt, 1e-4) / DEG - this.yawRate) * (1 - Math.exp(-8 * dt)); this.prevYaw = yawNow;
+    const sprint = !!this.sprintActive && this.state === 'move';
+    const lx = vel[0] * Math.cos(this.yaw) - vel[2] * Math.sin(this.yaw);
+    const stepRate = (sprint ? 13 : 9) * Math.min(1, speed / 7.5 * 1.15); this.phase += stepRate * dt;
+    const s = Math.sin(this.phase), c = Math.cos(this.phase), amp = Math.min(1, speed / 3);
+    const legSwing = (28 + (50 - 28) * this.speed01) * amp, armSwing = (18 + (40 - 18) * this.speed01) * amp;
+    const t = performance.now() / 1000, breath = Math.sin(t * 1.8);
+    const R = (n, x, y, z) => { if (n) n.r = [x * DEG, (y || 0) * DEG, (z || 0) * DEG]; };
+    const node = this.node; node.p = this.pos.slice(); node.r = [0, this.yaw, 0];
+    // ---- ölüm
+    if (this.state === 'dead') {
+      const u = Math.min(1, this.t / 0.7); v.vis.r = [-85 * DEG * u, 0, 0]; v.vis.p = [0, 0.3 * u, 0]; R(v.legL, 10); R(v.legR, -5); this.stowedBlend(dt, true); return;
+    }
+    // ---- yuvarlanma
+    if (this.state === 'dodge') {
+      const p = Math.min(1, this.t / this.dur), roll = p * p * (3 - 2 * p) * 360;
+      const q = roll * DEG, pz = 0.85; // chest pivotu etrafında
+      v.vis.r = [q, 0, 0]; v.vis.p = [0, pz - pz * Math.cos(q) - 0.28 * Math.sin(p * Math.PI), -pz * Math.sin(q)];
+      R(v.torso, 35); R(v.head, 25); R(v.legL, -70); R(v.shinL, 110); R(v.legR, -75); R(v.shinR, 115); R(v.armL, -60, 0, 20); R(v.foreL, -80); R(v.armR, -55, 0, -20); R(v.foreR, -80);
+      v.hips.p = this.hipsBase.slice(); v.hips.r = [0, 0, 0]; this.cloakSway(1.6, 0, dt, 0.8); this.scytheUpdate(dt); return;
+    }
+    v.vis.r = [0, 0, 0]; v.vis.p = [0, 0, 0];
+    const targetLean = 2 + ((sprint ? 22 : 11) - 2) * this.speed01; this.lean = (this.lean || 0) + (targetLean - (this.lean || 0)) * (1 - Math.exp(-9 * dt));
+    const bob = Math.abs(c) * 0.05 * amp * (sprint ? 1.4 : 1);
+    v.hips.p = [this.hipsBase[0], this.hipsBase[1] + bob + breath * 0.004, this.hipsBase[2]]; v.hips.r = [0, -s * 6 * amp * DEG, 0];
+    const sideRoll = Math.max(-10, Math.min(10, -lx * 1.5 - this.yawRate * 0.03));
+    R(v.torso, this.lean + breath * 0.8, s * 7 * amp, sideRoll); R(v.head, -this.lean * 0.6 + breath * 0.5, -s * 4 * amp);
+    R(v.legL, s * legSwing); R(v.legR, -s * legSwing); R(v.shinL, Math.max(0, -s) * legSwing * 1.3 + 4 * amp); R(v.shinR, Math.max(0, s) * legSwing * 1.3 + 4 * amp);
+    let aL = -s * armSwing, aR = s * armSwing, fL = -12 - Math.max(0, s) * 18 * amp, fR = -12 - Math.max(0, -s) * 18 * amp;
+    const mode = this.scytheMode(), u = this.modeProgress();
+    if (!this.stowed && mode === 'rest') { aR = -25 + s * armSwing * 0.25; fR = -35; aL = -s * armSwing * 0.7; }
+    if (mode === 'light') { const tt = (u * 2 - 1) * (this.lightSide || 1); R(v.torso, this.lean * .4, -tt * 55, 0); aR = -70; fR = -35; aL = -40; }
+    else if (mode === 'sweep') { const tt = 1 - 2 * u; R(v.torso, 28, tt * 70, 0); aR = -50; fR = -20; aL = -60; fL = -30; R(v.legL, -30); R(v.legR, 35); R(v.shinL, 25); R(v.shinR, 40); }
+    else if (mode === 'heavy') { const up = Math.min(1, u / 0.35), dn = Math.min(1, Math.max(0, (u - 0.35) / 0.3)); const arm = -165 * up + 130 * dn; aR = arm; aL = arm * 0.95; fR = fL = -20; R(v.torso, -10 + 40 * dn, 0, 0); }
+    else if (mode === 'spin' || mode === 'burst') { R(v.torso, 8, 0, 0); const q = u * u * (3 - 2 * u); v.hips.r = [0, 360 * q * DEG * (mode === 'burst' ? 1 : 1), 0]; aR = -85; aL = -85; fR = fL = -10; }
+    else if (mode === 'absorb') { aR = -92; fR = -5; aL = 35; fL = -30; R(v.torso, -6, -15, 0); }
+    if (this.hurtT > 0) { R(v.torso, -18 * this.hurtT / 0.4, 0, 0); }
+    R(v.armL, aL, 0, 6); R(v.foreL, fL); R(v.armR, aR, 0, -6); R(v.foreR, fR);
+    const acting = mode !== 'rest'; this.cloakSway(this.speed01 + (acting ? 0.6 : 0), -lx * 0.1 + this.yawRate * 0.02, dt, sprint ? 1.3 : 1);
+    const flap = Math.sin(t * 2.3) * 3 + this.speed01 * 28; R(v.wingL, 0, 0, -flap - 4); R(v.wingR, 0, 0, flap + 4);
+    this.scytheUpdate(dt);
+  }
+  cloakSway(sf, side, dt, gain) {
+    this.swaySm += (side - this.swaySm) * (1 - Math.exp(-5 * dt)); const t = performance.now() / 1000;
+    for (let i = 0; i < this.cloak.length; i++) { const n = this.cloak[i]; if (!n) continue; const k = (i + 1) / 4;
+      const back = (8 + 26 * sf * gain) * (0.45 + 0.55 * k), wave = Math.sin(t * (3.1 + sf * 4) - i * 0.9) * (4 + 9 * sf) * k, sd = this.swaySm * 18 * k;
+      n.r = [(back + wave) * DEG, wave * 0.6 * DEG, sd * DEG]; }
+  }
+  scytheMode() { switch (this.state) { case 'attack': return this.atk.kind; case 'burst': return 'burst'; case 'absorb': return 'absorb'; case 'dodge': return 'dodge'; default: return 'rest'; } }
+  modeProgress() { return this.state === 'move' ? 0 : Math.min(1, this.t / Math.max(0.01, this.dur)); }
+  stowedBlend(dt, dead) { this.scytheUpdate(dt); }
+  scytheUpdate(dt) {
+    const mode = this.scytheMode(), u = this.modeProgress();
+    const sprint = !!this.sprintActive && this.state === 'move';
+    if (sprint !== this.stowed && (!sprint || performance.now() > (this.drawLock || 0))) this.stowed = sprint;
+    if (mode !== 'rest') this.drawLock = performance.now() + (this.dur + 0.7) * 1000;
+    let tp = [0.45, 1.0, 0.3], tr = [-84 * DEG, 0, 180 * DEG], follow = 18; const PV = [0, 1.1, 0];
+    const rotY = (a, p) => [Math.sin(a) * p[2] + Math.cos(a) * p[0], p[1], Math.cos(a) * p[2] - Math.sin(a) * p[0]];
+    if (this.stowed) { tp = [0.05, 1.1, -0.42]; tr = [-72 * DEG, 10 * DEG, 15 * DEG]; follow = 12; }
+    const e = 1 - (1 - u) * (1 - u);
+    if (mode === 'light') { const a = (80 * this.lightSide + (-160 * this.lightSide) * e) * DEG; const o = rotY(a, [0, 0, 0.95]); tp = [PV[0] + o[0], PV[1], PV[2] + o[2]]; tr = [0, a, 0]; follow = 60; }
+    else if (mode === 'sweep') { const a = (110 - 220 * e) * DEG; const o = rotY(a, [0, 0, 1.15]); tp = [o[0], PV[1] - 0.6, o[2]]; tr = [25 * DEG, a, 0]; follow = 55; }
+    else if (mode === 'heavy') { const p = (-110 + 145 * u * u) * DEG; tp = [0, PV[1] - Math.sin(p) * 1.0, Math.cos(p) * 1.0]; tr = [p, 0, 0]; follow = 40; }
+    else if (mode === 'absorb') { tp = [0.05, PV[1] + 0.15, 1.05]; tr = [0, 90 * DEG, this.t * 1300 * DEG]; follow = 90; }
+    else if (mode === 'burst' || mode === 'spin') { const a = 360 * e * DEG; const o = rotY(a, [0, 0, 1.15]); tp = [o[0], PV[1], o[2]]; tr = [0, a, 0]; follow = 70; }
+    else if (mode === 'dodge') { tp = [0.25, PV[1] - 0.35, -0.25]; tr = [80 * DEG, 0, 90 * DEG]; follow = 30; }
+    const k = 1 - Math.exp(-follow * dt), sc = this.scythe;
+    for (let i = 0; i < 3; i++) { this.sp[i] += (tp[i] - this.sp[i]) * k; let d = tr[i] - this.sr[i]; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; this.sr[i] += d * k; }
+    sc.p = this.sp.slice(); sc.r = this.sr.slice();
+  }
+}
+
+// ===================== Düşmanlar: kristal canavar, dev koruyucular, eğitim golemi =====================
+const ROCK = [0.30, 0.42, 0.52], CRYS = [0.35, 0.9, 1], CRYS_RED = [1, 0.25, 0.3], EYE = [1, 0.4, 0.15];
+const emisOf = (c, k) => [c[0] * k, c[1] * k, c[2] * k];
+function crystal(parent, name, pos, size, rot, color) { const n = part(parent, MESH.box, name, pos, size, color, { unlit: true, emis: [0, 0, 0] }); n.r = rot.map(x => x * DEG); n.emis = emisOf(color, 0.55); n.unlitGlow = true; return n; }
+
+function buildCreatureModel() {
+  const model = pivot(null, 'Model', [0, 0, 0]), rocks = [];
+  const R_ = (p, m, n, pos, sc) => { const x = part(p, m, n, pos, sc, ROCK); rocks.push(x); return x; };
+  const body = pivot(model, 'Body', [0, 0.8, 0]);
+  R_(body, MESH.sphere, 'Rock_Torso', [0, 0, 0], [0.75, 0.62, 1.35]); R_(body, MESH.sphere, 'Rock_Shoulder', [0, 0.12, 0.35], [0.85, 0.6, 0.6]);
+  for (let i = 0; i < 4; i++) crystal(body, 'Crystal_Back' + i, [i % 2 ? -0.1 : 0.1, 0.38, 0.45 - i * 0.28], [0.1, 0.42 - i * 0.04, 0.1], [15 * (i - 1.5), 0, i % 2 ? -14 : 14], CRYS);
+  const head = pivot(body, 'Head', [0, 0.1, 0.62]);
+  R_(head, MESH.sphere, 'Rock_Skull', [0, 0.02, 0.18], [0.42, 0.36, 0.56]);
+  part(head, MESH.sphere, 'Eye_L', [-0.13, 0.1, 0.34], [0.09, 0.09, 0.09], EYE, { unlit: true, emis: [1, 0.4, 0.1] });
+  part(head, MESH.sphere, 'Eye_R', [0.13, 0.1, 0.34], [0.09, 0.09, 0.09], EYE, { unlit: true, emis: [1, 0.4, 0.1] });
+  crystal(head, 'Crystal_HornL', [-0.14, 0.24, 0.08], [0.06, 0.32, 0.06], [-20, 0, 22], CRYS); crystal(head, 'Crystal_HornR', [0.14, 0.24, 0.08], [0.06, 0.32, 0.06], [-20, 0, -22], CRYS);
+  const jaw = pivot(head, 'Jaw', [0, -0.1, 0.2]); R_(jaw, MESH.box, 'Rock_Jaw', [0, 0, 0.14], [0.22, 0.07, 0.34]); crystal(jaw, 'Crystal_Fang', [0, 0.07, 0.28], [0.05, 0.1, 0.05], [0, 0, 0], CRYS);
+  const t0 = pivot(model, 'Tail0', [0, 0.8, -0.62]); R_(t0, MESH.box, 'Rock_Tail', [0, 0, -0.22], [0.2, 0.2, 0.5]);
+  const t1 = pivot(t0, 'Tail1', [0, 0, -0.46]); crystal(t1, 'Crystal_TailTip', [0, 0, -0.2], [0.13, 0.13, 0.5], [0, 0, 45], CRYS);
+  ['LegFL', 'LegFR', 'LegBL', 'LegBR'].forEach((n, i) => { const leg = pivot(model, n, [(i % 2 ? 0.28 : -0.28), 0.62, i < 2 ? 0.45 : -0.45]);
+    R_(leg, MESH.box, 'Rock_Leg', [0, -0.3, 0], [0.17, 0.62, 0.17]); R_(leg, MESH.box, 'Rock_Paw', [0, -0.6, 0.06], [0.22, 0.1, 0.3]); });
+  return { model, rocks };
+}
+
+function buildGiantModel(style, s) {
+  const model = pivot(null, 'Model', [0, 0, 0]); model.s = [s, s, s]; const rocks = [];
+  const crys = style === 2 ? CRYS_RED : CRYS, R_ = (p, m, n, pos, sc) => { const x = part(p, m, n, pos, sc, ROCK); rocks.push(x); return x; };
+  const capeCol = style === 2 ? [0.22, 0.04, 0.07] : [0.12, 0.14, 0.2];
+  for (const side of [-1, 1]) { const leg = pivot(model, side < 0 ? 'LegL' : 'LegR', [0.45 * side, 2, 0]); R_(leg, MESH.box, 'Rock_Leg', [0, -1, 0], [0.62, 2, 0.62]); R_(leg, MESH.box, 'Rock_Foot', [0, -1.9, 0.18], [0.78, 0.3, 1.1]); }
+  const body = pivot(model, 'Body', [0, 2, 0]);
+  R_(body, MESH.box, 'Rock_Torso', [0, 0.9, 0], [1.6, 1.8, 1]); crystal(body, 'Crystal_Core', [0, 1.05, 0.52], [0.5, 0.7, 0.12], [0, 0, 0], crys);
+  const sh = style === 1 ? 0.95 : 0.75; R_(body, MESH.sphere, 'Rock_ShoulderL', [-1.05, 1.7, 0], [sh, sh, sh]); R_(body, MESH.sphere, 'Rock_ShoulderR', [1.05, 1.7, 0], [sh, sh, sh]);
+  crystal(body, 'Crystal_SpikeL', [-1.2, 2.15, 0], [0.18, 0.9, 0.18], [0, 0, 20], crys); crystal(body, 'Crystal_SpikeR', [1.2, 2.15, 0], [0.18, 0.9, 0.18], [0, 0, -20], crys);
+  if (style === 0) for (let i = 0; i < 3; i++) crystal(body, 'Crystal_Back' + i, [(i - 1) * 0.4, 1.9 - Math.abs(i - 1) * 0.2, -0.55], [0.2, 1, 0.2], [-20, 0, (i - 1) * 12], crys);
+  const head = pivot(body, 'Head', [0, 1.9, 0.05]); R_(head, MESH.box, 'Rock_Skull', [0, 0.3, 0], [0.75, 0.7, 0.75]);
+  part(head, MESH.box, 'Eye_L', [-0.2, 0.36, 0.38], [0.17, 0.08, 0.05], EYE, { unlit: true, emis: [1, 0.4, 0.1] }); part(head, MESH.box, 'Eye_R', [0.2, 0.36, 0.38], [0.17, 0.08, 0.05], EYE, { unlit: true, emis: [1, 0.4, 0.1] });
+  const jaw = pivot(head, 'Jaw', [0, 0, 0.3]); R_(jaw, MESH.box, 'Rock_Jaw', [0, -0.02, 0.05], [0.5, 0.12, 0.35]);
+  if (style === 2) { crystal(head, 'Crystal_HornL', [-0.35, 0.8, 0], [0.14, 0.9, 0.14], [0, 0, 25], crys); crystal(head, 'Crystal_HornR', [0.35, 0.8, 0], [0.14, 0.9, 0.14], [0, 0, -25], crys); }
+  else crystal(head, 'Crystal_Crown', [0, 0.9, 0], [0.18, 0.7, 0.18], [0, 0, 0], crys);
+  for (const side of [-1, 1]) { const arm = pivot(body, side < 0 ? 'ArmL' : 'ArmR', [1.05 * side, 1.7, 0]); R_(arm, MESH.box, 'Rock_Arm', [0, -0.85, 0], [0.46, 1.7, 0.46]); R_(arm, MESH.sphere, 'Rock_Fist', [0, -1.8, 0], [0.8, 0.8, 0.8]); crystal(arm, 'Crystal_Knuckle', [0, -1.85, 0.4], [0.14, 0.14, 0.5], [0, 0, 0], crys); }
+  if (style >= 1) { let cp = pivot(body, 'Cape0', [0, 1.8, -0.55]); const w = [1.5, 1.7, 1.9];
+    for (let i = 0; i < 3; i++) { part(cp, MESH.box, 'CapeMesh', [0, -0.45, 0], [w[i], 0.9, 0.08], capeCol); if (i < 2) cp = pivot(cp, 'Cape' + (i + 1), [0, -0.9, 0]); } }
+  return { model, rocks };
+}
+
+// Ortak canlandırıcı (ActorAnimator'ın karşılığı)
+class ActorAnim {
+  constructor(model, biped) {
+    this.m = model; this.biped = biped; const f = p => model.find(p);
+    this.body = f('Body'); this.head = f('Body/Head'); this.jaw = f('Body/Head/Jaw'); this.t0 = f('Tail0'); this.t1 = f('Tail0/Tail1');
+    this.fl = f('LegFL') || f('LegL'); this.fr = f('LegFR') || f('LegR'); this.bl = f('LegBL'); this.br = f('LegBR'); this.aL = f('Body/ArmL'); this.aR = f('Body/ArmR');
+    this.cape = []; let c = f('Body/Cape0'); for (let i = 0; i < 3 && c; i++) { this.cape.push(c); c = c.children.find(x => x.name === 'Cape' + (i + 1)); }
+    this.bodyBase = this.body ? this.body.p.slice() : [0, 0, 0]; this.phase = 0; this.move = 0; this.wind = 0; this.dead = 0; this.prev = null;
+  }
+  update(dt, pose, pos) {
+    const R = (n, x, y, z) => { if (n) n.r = [x * DEG, (y || 0) * DEG, (z || 0) * DEG]; };
+    const awake = pose.awake, moving = pose.moving, tele = pose.tele, strike = pose.strike, stagger = pose.stagger, dead = pose.dead, t = performance.now() / 1000;
+    this.move += ((moving ? 1 : 0) - this.move) * (1 - Math.exp(-8 * dt)); this.phase += (moving ? 8 : 0) * dt; this.wind += ((tele ? 1 : 0) - this.wind) * (1 - Math.exp(-10 * dt)); this.dead += ((dead ? 1 : 0) - this.dead) * (1 - Math.exp(-4 * dt));
+    const s = Math.sin(this.phase), br = Math.sin(t * (awake ? 2.4 : 1.2)), crouch = awake ? 0 : 0.12, shake = stagger ? Math.sin(t * 45) * 2.5 : 0;
+    if (this.body) { const bob = Math.abs(Math.cos(this.phase)) * 0.06 * this.move, lunge = strike ? 0.25 : -0.2 * this.wind;
+      this.body.p = [this.bodyBase[0], this.bodyBase[1] + bob + br * 0.015 - crouch + 0.15 * this.wind, this.bodyBase[2] + lunge]; R(this.body, -14 * this.wind + (strike ? 25 : 0) + shake + 6 * this.move, shake, 0); }
+    this.m.r = [0, 0, 78 * DEG * this.dead]; this.m.p = [0, -0.25 * this.dead, 0];
+    R(this.head, (strike ? 28 : -10 * this.wind) + br * 2 + (stagger ? 15 : 0), Math.sin(t * 0.8) * (awake ? 6 : 2)); R(this.jaw, tele ? 38 : (strike ? 5 : 8 + br * 4));
+    const sw = 34 * this.move; R(this.fl, s * sw); R(this.br, s * sw); R(this.fr, -s * sw); R(this.bl, -s * sw);
+    let arm = -s * 28 * this.move; if (tele) arm = -150 * this.wind; if (strike) arm = 70;
+    R(this.aL, arm * (this.biped ? 1 : 0.6) + br, 0, 6); R(this.aR, (tele ? arm : -arm) + br, 0, -6);
+    R(this.t0, 10 + Math.sin(t * 3) * 12, Math.sin(t * 2.2) * 20); R(this.t1, 6, Math.sin(t * 2.2 - 0.8) * 25);
+    let spd = 0; if (this.prev) spd = Math.min(1, Math.hypot(pos[0] - this.prev[0], pos[2] - this.prev[2]) / Math.max(dt, 1e-4) / 5); this.prev = pos.slice();
+    this.cape.forEach((c, i) => { const k = (i + 1) / 3; R(c, 6 + 24 * spd * k + Math.sin(t * (2 + 4 * spd) - i * 0.9) * (4 + 10 * spd) * k, Math.sin(t * 1.7 - i) * 5 * k, 0); });
+  }
+}
+
+class Monster {
+  constructor(node, rocks, radius) { this.node = node; this.rocks = rocks; this.radius = radius; this.pos = [0, 0, 0]; this.yaw = 0; this.dead = false; this.ghost = false; this.flashT = 0; this.rhythm = performance.now() / 1000; this.armorBroken = false; this.armorRegen = 0; this.warn = null; }
+  tint(c) { for (const r of this.rocks) r.color = c; }
+  faceTo(p, dt, rate) { const ty = Math.atan2(p[0] - this.pos[0], p[2] - this.pos[2]); let d = ty - this.yaw; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; this.yaw += d * Math.min(1, dt * rate); }
+  flatDist(p) { return Math.hypot(p[0] - this.pos[0], p[2] - this.pos[2]); }
+  sync() { this.node.p = this.pos.slice(); this.node.r = [0, this.yaw, 0]; }
+  setWarning(r, show) { if (!this.warn) { this.warn = part(Game.scene, MESH.ring, 'Warn', [0, 0, 0], [1, 1, 1], [1, 0.2, 0.15], { unlit: true, additive: true, alpha: 0.6 }); this.warn.visible = false; }
+    this.warn.visible = !!show; if (show) { this.warn.p = [this.pos[0], groundY(this.pos[0], this.pos[2]) + 0.1, this.pos[2]]; this.warn.s = [r * 2, 1, r * 2]; this.warn.alpha = 0.35 + 0.3 * Math.sin(performance.now() / 40); } }
+  stateColor(s) {
+    const t = performance.now() / 1000; const brit = this.isBrittle();
+    if (this.flashT > 0) return [1, 1, 1];
+    if (s === 'stagger') return [1, 0.85, 0.2]; if (brit) return [0.6, 1, 1];
+    if (s === 'tele') { const p = 0.65 + 0.35 * Math.sin(t * 24); return [p, 0.15, 0.1]; } if (s === 'recover') return [0.5, 0.3, 0.3];
+    return ROCK;
+  }
+  remove() { if (this.warn) this.warn.visible = false; }
+}
+
+class Creature extends Monster {
+  constructor(p) {
+    const m = buildCreatureModel(); const root = pivot(Game.scene, 'Creature', [0, 0, 0]); root.add(m.model);
+    const sh = part(root, MESH.sphere, 'Shadow', [0, 0.04, 0], [1.6, 0.02, 2.0], [0, 0, 0], { alpha: 0.35, unlit: true });
+    super(root, m.rocks, 0.65); this.pos = [p[0], groundY(p[0], p[2]), p[2]]; this.anim = new ActorAnim(m.model, false);
+    this.hp = this.maxHp = 60; this.state = 'idle'; this.stateEnd = 0; this.impactAt = 0; this.nextAtk = 0; this.vy = 0; this.speed = 3.5; this.kind = 'creature'; this.name = 'Kristal Yaratık';
+  }
+  isBrittle() { if (this.dead || this.state === 'idle' || this.armorBroken) return false; if (this.state === 'stagger') return true; const t = (performance.now() / 1000 - this.rhythm) % 2.5; return t >= 1.7; }
+  isAbsorbable() { return this.state === 'tele'; }
+  wake() { if (this.state === 'idle') { this.state = 'chase'; this.rhythm = performance.now() / 1000; this.nextAtk = performance.now() / 1000 + 0.5; Snd.play('telegraph'); } }
+  hit(dmg, from, power, brittle) {
+    if (this.dead) return; this.wake(); this.hp -= dmg; this.flashT = 0.08; Snd.play('hit'); FX.sparks([this.pos[0], this.pos[1] + 0.9, this.pos[2]], 8, 5, FX.GOLD);
+    const dx = this.pos[0] - from[0], dz = this.pos[2] - from[2], l = Math.hypot(dx, dz) || 1; this.pos[0] += dx / l * 0.5 * power; this.pos[2] += dz / l * 0.5 * power;
+    if (brittle) this.shatter(); if (this.hp <= 0) this.die();
+  }
+  shatter() { this.armorBroken = true; this.armorRegen = performance.now() / 1000 + 3.5; this.stagger(); Snd.play('shatter'); FX.ring([this.pos[0], this.pos[1] + 1, this.pos[2]], 0.2, 2.2, 0.3, FX.GOLD, true); FX.sparks([this.pos[0], this.pos[1] + 1, this.pos[2]], 30, 7, FX.GOLD); GameEvents.emit('shatter'); }
+  stagger() { if (this.state === 'dead') return; this.state = 'stagger'; this.stateEnd = performance.now() / 1000 + 1.3; }
+  absorbed() { this.hp -= 15; this.flashT = 0.1; if (this.hp <= 0) this.die(); else this.stagger(); }
+  die() { if (this.dead) return; this.dead = true; this.state = 'dead'; this.deadAt = performance.now() / 1000; this.setWarning(0, false); Snd.play('shatter'); FX.debris([this.pos[0], this.pos[1], this.pos[2]], 14, 5); FX.sparks([this.pos[0], this.pos[1] + 1, this.pos[2]], 24, 6, FX.BLUE); GameEvents.emit('killed', this); }
+  update(dt, pl) {
+    const now = performance.now() / 1000; this.flashT = Math.max(0, this.flashT - dt);
+    if (this.dead) { this.tint([0.1, 0.1, 0.12]); this.anim.update(dt, { dead: true }, this.pos); this.sync(); if (now - this.deadAt > 2.2) this.node.visible = false; return; }
+    if (this.armorBroken && now >= this.armorRegen) { this.armorBroken = false; this.rhythm = now; }
+    const dist = this.flatDist(pl.pos); let mv = [0, 0];
+    switch (this.state) {
+      case 'idle': if (dist < 13 && !pl.dead) this.wake(); break;
+      case 'chase': this.faceTo(pl.pos, dt, 10); if (dist > 24) { this.state = 'idle'; break; }
+        if (dist > 1.8) { mv = [Math.sin(this.yaw) * this.speed, Math.cos(this.yaw) * this.speed]; } else if (now >= this.nextAtk && !pl.dead) { this.state = 'tele'; this.impactAt = now + 0.7; Snd.play('telegraph'); } break;
+      case 'tele': this.faceTo(pl.pos, dt, 10); if (now >= this.impactAt) { if (dist <= 2.6) pl.hurt(10, this.pos); FX.sparks([this.pos[0] + Math.sin(this.yaw) * 1.5, this.pos[1] + 0.6, this.pos[2] + Math.cos(this.yaw) * 1.5], 8, 4, FX.RED); this.state = 'recover'; this.stateEnd = now + 0.7; } break;
+      case 'recover': case 'stagger': if (now >= this.stateEnd) { this.state = 'chase'; this.nextAtk = now + 1.2; } break;
+    }
+    // Hareket + çarpışma
+    let nx = this.pos[0] + mv[0] * dt, nz = this.pos[2] + mv[1] * dt;
+    for (const c of WORLD.colliders) { const dx = nx - c.x, dz = nz - c.z, r = c.r + this.radius, d2 = dx * dx + dz * dz; if (d2 < r * r) { const d = Math.sqrt(d2) || .001; nx = c.x + dx / d * r; nz = c.z + dz / d * r; } }
+    for (const e of Game.enemies) { if (e === this || e.dead) continue; const dx = nx - e.pos[0], dz = nz - e.pos[2], r = this.radius + e.radius, d2 = dx * dx + dz * dz; if (d2 < r * r) { const d = Math.sqrt(d2) || .001; nx = e.pos[0] + dx / d * r; nz = e.pos[2] + dz / d * r; } }
+    { const dx = nx - pl.pos[0], dz = nz - pl.pos[2], r = this.radius + 0.45, d2 = dx * dx + dz * dz; if (d2 < r * r) { const d = Math.sqrt(d2) || .001; nx = pl.pos[0] + dx / d * r; nz = pl.pos[2] + dz / d * r; } }
+    if (groundY(nx, nz) > WORLD.waterY + 0.3) { this.pos[0] = nx; this.pos[2] = nz; } this.pos[1] = groundY(this.pos[0], this.pos[2]);
+    this.tint(this.stateColor(this.state)); this.setWarning(2.6, this.state === 'tele');
+    this.anim.update(dt, { awake: this.state !== 'idle', moving: mv[0] !== 0 || mv[1] !== 0, tele: this.state === 'tele', strike: this.state === 'recover', stagger: this.state === 'stagger', dead: false }, this.pos); this.sync();
+  }
+}
+
+const BOSS_ATTACKS = [
+  { name: 'Kristal Yumruk', tele: 1.0, dmg: 22, range: 5.2, arc: 120, recover: 1.0, minPhase: 1, w: 1.2 },
+  { name: 'Geniş Süpürme', tele: 0.9, dmg: 16, range: 7, arc: 200, recover: 0.9, minPhase: 1, w: 1.0 },
+  { name: 'Yer Dalgası', tele: 1.3, dmg: 28, range: 10, arc: 360, recover: 1.3, minPhase: 2, w: 1.2 },
+  { name: 'Çifte Darbe', tele: 0.7, dmg: 18, range: 4.5, arc: 110, recover: 0.7, minPhase: 2, w: 1.0 }
+];
+class Boss extends Monster {
+  constructor(p, style, scale, def) {
+    const m = buildGiantModel(style, scale); const root = pivot(Game.scene, def.name, [0, 0, 0]); root.add(m.model);
+    part(root, MESH.sphere, 'Shadow', [0, 0.05, 0], [4.2 * scale, 0.02, 4.2 * scale], [0, 0, 0], { alpha: 0.35, unlit: true });
+    super(root, m.rocks, 1.25 * scale); Object.assign(this, def);
+    this.pos = [p[0], groundY(p[0], p[2]), p[2]]; this.anim = new ActorAnim(m.model, true); this.hp = this.maxHp = def.hp; this.state = 'dormant'; this.phase = 1; this.cur = null; this.nextAtk = 0; this.stateEnd = 0; this.kind = 'boss'; this.speed = def.speed || 3; this.attacks = def.attacks || BOSS_ATTACKS.slice(0, 2); this.scale = scale; this.hasSecond = !!def.second;
+  }
+  isBrittle() { if (this.dead || this.state === 'dormant' || this.armorBroken) return false; if (this.state === 'stagger') return true; const t = (performance.now() / 1000 - this.rhythm) % 3.2; return t >= 2.3; }
+  isAbsorbable() { return this.state === 'tele'; }
+  hit(dmg, from, power, brittle) {
+    if (this.dead || this.state === 'dormant') return; this.hp -= dmg; this.flashT = 0.07; Snd.play('hit'); FX.sparks([this.pos[0], this.pos[1] + 2, this.pos[2]], 8, 5, FX.GOLD);
+    if (brittle) this.shatter(); this.checkPhase(); if (this.hp <= 0) this.die();
+  }
+  shatter() { this.armorBroken = true; this.armorRegen = performance.now() / 1000 + 4; if (this.state !== 'shift') this.stagger(0.9); Snd.play('shatter'); const p = [this.pos[0], this.pos[1] + 2.2, this.pos[2]]; FX.ring(p, 0.3, 3.5, 0.35, FX.GOLD, true); FX.sparks(p, 40, 8, FX.GOLD); GameEvents.emit('shatter'); }
+  stagger(t) { if (this.dead || this.state === 'shift') return; this.state = 'stagger'; this.stateEnd = performance.now() / 1000 + (t || 1.8); this.setWarning(0, false); }
+  absorbed() { this.hp -= 40; this.flashT = 0.1; this.checkPhase(); if (this.hp <= 0) this.die(); else this.stagger(2.4); }
+  checkPhase() { if (this.hasSecond && this.phase === 1 && this.hp <= this.maxHp * 0.5 && this.hp > 0) { this.phase = 2; this.state = 'shift'; this.stateEnd = performance.now() / 1000 + 2.0; this.speed *= 1.3; Snd.play('roar'); Game.shake(0.8); GameEvents.emit('boss_phase2', this); } }
+  die() { if (this.dead) return; this.dead = true; this.state = 'dead'; this.deadAt = performance.now() / 1000; this.setWarning(0, false); Snd.play('roar'); Game.shake(1); Game.slowmo(0.4, 0.5); for (let i = 0; i < 5; i++) FX.debris([this.pos[0], this.pos[1] + i * 0.6, this.pos[2]], 10, 7); FX.vortex([this.pos[0], this.pos[1], this.pos[2]], 2, 3, FX.BLUE); GameEvents.emit('boss_dead', this); }
+  chooseAttack() { const pool = this.attacks.filter(a => a.minPhase <= this.phase); let tot = pool.reduce((s, a) => s + a.w, 0), r = Math.random() * tot; for (const a of pool) { r -= a.w; if (r <= 0) return a; } return pool[0]; }
+  update(dt, pl) {
+    const now = performance.now() / 1000; this.flashT = Math.max(0, this.flashT - dt); const dist = this.flatDist(pl.pos);
+    if (this.dead) { const t = now - this.deadAt; this.tint([0.12, 0.12, 0.14]); this.pos[1] = groundY(this.pos[0], this.pos[2]) - Math.min(3, t * 0.7); this.anim.update(dt, { dead: true }, this.pos); this.sync(); return; }
+    if (this.armorBroken && now >= this.armorRegen) { this.armorBroken = false; this.rhythm = now; }
+    let mv = 0;
+    switch (this.state) {
+      case 'dormant': if (dist < this.aggro && !pl.dead) { this.state = 'idle'; this.rhythm = now; this.nextAtk = now + 1.2; Snd.play('roar'); Game.shake(0.5); GameEvents.emit('boss_wake', this); } break;
+      case 'idle': this.faceTo(pl.pos, dt, 4); if (pl.dead) break; if (dist > this.range0() * 0.8) mv = this.speed; else if (now >= this.nextAtk) { this.cur = this.chooseAttack(); this.state = 'tele'; this.impactAt = now + this.cur.tele; Snd.play('telegraph'); }
+        if (dist > this.leash) { this.state = 'dormant'; this.hp = Math.min(this.maxHp, this.hp + 1); } break;
+      case 'tele': this.faceTo(pl.pos, dt, this.cur.arc >= 360 ? 2 : 3); if (now >= this.impactAt) this.doStrike(pl, now); break;
+      case 'recover': if (now >= this.stateEnd) { this.state = 'idle'; this.nextAtk = now + 0.6; } break;
+      case 'stagger': if (now >= this.stateEnd) { this.state = 'idle'; this.nextAtk = now + 0.8; } break;
+      case 'shift': if (now >= this.stateEnd) { this.state = 'idle'; this.nextAtk = now + 0.5; } break;
+    }
+    if (mv) { this.pos[0] += Math.sin(this.yaw) * mv * dt; this.pos[2] += Math.cos(this.yaw) * mv * dt; }
+    this.pos[1] = groundY(this.pos[0], this.pos[2]);
+    this.tint(this.state === 'shift' ? [1, 0.4, 0.2] : this.stateColor(this.state)); this.setWarning(this.cur ? this.cur.range : 0, this.state === 'tele');
+    this.anim.update(dt, { awake: this.state !== 'dormant', moving: mv > 0, tele: this.state === 'tele', strike: this.state === 'recover', stagger: this.state === 'stagger' || this.state === 'shift', dead: false }, this.pos); this.sync();
+  }
+  range0() { return Math.min(...this.attacks.filter(a => a.minPhase <= this.phase).map(a => a.range)) * 0.9 + 0.8; }
+  doStrike(pl, now) {
+    const a = this.cur, dx = pl.pos[0] - this.pos[0], dz = pl.pos[2] - this.pos[2], d = Math.hypot(dx, dz) - 0.8; let inArc = true;
+    if (a.arc < 359) { const dot = (dx * Math.sin(this.yaw) + dz * Math.cos(this.yaw)) / (Math.hypot(dx, dz) || 1); inArc = dot >= Math.cos(a.arc / 2 * DEG); }
+    const front = [this.pos[0] + Math.sin(this.yaw) * 3, this.pos[1], this.pos[2] + Math.cos(this.yaw) * 3];
+    if (a.arc >= 359) { Snd.play('stomp'); FX.ring(this.pos, 1, a.range * 1.05, 0.55, FX.RED); FX.ring(this.pos, 0.5, a.range * .7, 0.45, FX.WHITE, true); FX.debris(this.pos, 18, 8); }
+    else if (a.arc > 150) { Snd.play('sweep'); FX.arc([this.pos[0], this.pos[1] + 1.4, this.pos[2]], this.yaw, a.range * 0.55, 0.4, FX.RED, 0); }
+    else { Snd.play('stomp'); FX.ring(front, 0.4, 3.6, 0.45, FX.RED); FX.debris(front, 14, 6); FX.sparks(front, 24, 8, FX.RED); }
+    Game.shake(0.55);
+    if (d <= a.range && inArc) pl.hurt(a.dmg, this.pos);
+    this.state = 'recover'; this.stateEnd = now + a.recover; this.nextAtk = now + a.recover + 0.5;
+  }
+}
+
+// Eğitim golemi: yerinde durur, zaman zaman telgraf çeker (emilim öğretisi)
+class Dummy extends Monster {
+  constructor(p) {
+    const m = buildGiantModel(0, 0.5); const root = pivot(Game.scene, 'Dummy', [0, 0, 0]); root.add(m.model);
+    super(root, m.rocks, 0.7); this.pos = [p[0], groundY(p[0], p[2]), p[2]]; this.anim = new ActorAnim(m.model, true); this.state = 'idle'; this.stateEnd = performance.now() / 1000 + 2.5; this.hp = this.maxHp = 9999; this.hits = 0; this.absorbedCount = 0; this.name = 'Eğitim Golemi'; this.kind = 'dummy'; this.cycle = 4; this.shown = false; this.yaw = Math.PI;
+  }
+  isBrittle() { return false; } isAbsorbable() { return this.state === 'tele'; }
+  hit() { this.hits++; this.flashT = 0.1; Snd.play('hit'); FX.sparks([this.pos[0], this.pos[1] + 1, this.pos[2]], 6, 4, FX.GOLD); }
+  absorbed() { this.absorbedCount++; this.state = 'stagger'; this.stateEnd = performance.now() / 1000 + 1.5; }
+  die() { }
+  update(dt, pl) {
+    if (!this.node.visible) return; const now = performance.now() / 1000; this.flashT = Math.max(0, this.flashT - dt);
+    this.faceTo(pl.pos, dt, 2);
+    if (this.state === 'idle' && now >= this.stateEnd && this.active) { this.state = 'tele'; this.stateEnd = now + 1.1; Snd.play('telegraph'); }
+    else if (this.state === 'tele' && now >= this.stateEnd) { if (this.flatDist(pl.pos) < 3) pl.hurt(6, this.pos); this.state = 'recover'; this.stateEnd = now + 0.8; FX.ring(this.pos, .4, 3, .4, FX.RED); }
+    else if ((this.state === 'recover' || this.state === 'stagger') && now >= this.stateEnd) { this.state = 'idle'; this.stateEnd = now + this.cycle; }
+    this.tint(this.flashT > 0 ? [1, 1, 1] : (this.state === 'tele' ? [0.65 + 0.35 * Math.sin(now * 24), 0.15, 0.1] : this.state === 'stagger' ? [1, 0.85, 0.2] : ROCK)); this.setWarning(3, this.state === 'tele');
+    this.anim.update(dt, { awake: true, moving: false, tele: this.state === 'tele', strike: this.state === 'recover', stagger: this.state === 'stagger' }, this.pos); this.sync();
+  }
+}
+
+// ===================== Oyun: akış, görev, HUD, menüler, kamera =====================
+const GameEvents = (() => { const h = {}; return { on(n, f) { (h[n] = h[n] || []).push(f); }, emit(n, a) { (h[n] || []).forEach(f => f(a)); } }; })();
+const $ = id => document.getElementById(id);
+
+const VAEL = {
+  intro1: 'Uyandın, Mühürdar. Yıllardır bu dünyada kimse kalmadı. Yalnızca biz varız… ve sessizlik.',
+  intro2: 'Ben Vael. Tırpanın içindeki sesim. Sana yolu göstereceğim.',
+  tut_done: 'İyi. Ritmi buldun. Şimdi Kristal Geçidi\'ne yürü; Koruyucu bekliyor.',
+  first_enemy: 'Kristalleşmiş yaratıklar. Bir zamanlar canlıydılar. Onlara acıyorsan geç kalırsın.',
+  special_not_ready: 'Rezonansın dolmadı. Vurdukça ve emdikçe dolar.',
+  special_ready: 'Rezonans doldu. Özel saldırı hazır!',
+  shatter: 'Zırhları çatladı! Hızlı ol, sersemlediler.',
+  absorb_ok: 'Enerjilerini içine çektin. Bunu sakın alışkanlık edinme.',
+  seal: 'Mühür seni onardı. Dünya hâlâ hatırlıyor.',
+  low_hp: 'Yaralısın. Kaçınmak, vurmaktan çoktur.',
+  boss_wake: 'Kristal Koruyucu… Kapının anahtarını o taşıyor. Kırıl ya da kırıl.',
+  boss_p2: 'Öfkeleniyor! Parçalarını sallıyor, daha hızlı vuracak.',
+  boss_dead: 'Düştü. Eski mühür parçası artık senin. Ona git.',
+  key: 'Anahtar. Kapıya götür.',
+  gate_locked: 'Kapı mühürlü. Koruyucunun anahtarı gerek.',
+  gate_open: 'Kapı açılıyor… Ardında ne olduğunu bilmiyorum, Senol.',
+  vael_anger: 'Bu yaratıkları parçalamak istiyorum. Neden şefkat gösteriyorsun?',
+  senol_silent: '…',
+  died: 'Düştün. Ama mühür seni geri çağırıyor.',
+  end1: 'Sessiz Kalp\'a yaklaşıyoruz. Öfkem ile şefkatin arasında bir yol var, Senol.',
+  end2: 'Henüz bitmedi. Bu yalnızca başlangıç.'
+};
+
+const Game = {
+  running: false, state: 'menu', scene: null, enemies: [], blockers: [], cam: { yaw: 0, pitch: 0.22, dist: 5.4 }, timeScale: 1, shakeAmt: 0, hitStopT: 0, slowT: 0, slowScale: 1,
+  flags: { key: false, gate: false, tutorial: false, bossDead: false }, sealIdx: -1, stats: { kills: 0, time: 0, deaths: 0, absorbs: 0 }, tutStep: 0, tutInfo: {}, seals: [], pickups: [],
+  canAct() { return this.state === 'play'; },
+  shake(a) { this.shakeAmt = Math.min(1, Math.max(this.shakeAmt, a)); },
+  hitStop(t) { this.hitStopT = Math.max(this.hitStopT, t); },
+  slowmo(scale, dur) { this.slowScale = scale; this.slowT = dur; },
+  flash(kind) { const el = $('vig'); el.className = kind; el.style.opacity = 1; setTimeout(() => { el.style.opacity = 0; }, 160); },
+  nearestEnemy(pos, range, dir, arc) {
+    let best = null, bd = 1e9; const cosA = Math.cos(arc / 2 * DEG);
+    for (const e of this.enemies) { if (e.dead || e.kind === 'dummy' && !e.node.visible) continue; const dx = e.pos[0] - pos[0], dz = e.pos[2] - pos[2], d = Math.hypot(dx, dz) - e.radius; if (d > range) continue;
+      if ((dx * dir[0] + dz * dir[1]) / (Math.hypot(dx, dz) || 1) < cosA) continue; if (d < bd) { bd = d; best = e; } } return best;
+  }
+};
+
+// ---------- Altyazı / Vael ----------
+const Sub = { q: [], cur: null, t: 0, done: {},
+  say(id, force) { const text = VAEL[id]; if (!text) return; if (!force && this.done[id]) return; this.done[id] = true; this.q.push({ id, text, dur: Math.max(2.8, text.length * 0.06) }); },
+  update(dt) { if (!this.cur && this.q.length) { this.cur = this.q.shift(); this.t = 0; $('sub').textContent = this.cur.text; $('subwrap').style.opacity = 1; Snd.play('vael'); Snd.speak(this.cur.text); vael.pulse = 1; }
+    if (this.cur) { this.t += dt; if (this.t > this.cur.dur) { this.cur = null; $('subwrap').style.opacity = 0; } } }
+};
+let vael = { node: null, pulse: 0, pos: [0, 2, 0] };
+
+// ---------- Görev / eğitim ----------
+const TUT = [
+  { id: 'move', text: () => `Yürümek için ${glyph('move')} · Kamera: ${glyph('look')}`, done: g => g.tutInfo.moved > 5 },
+  { id: 'sprint', text: () => `Hızlı koşu: ${glyph('sprint')} (tırpan sırta geçer)`, done: g => g.tutInfo.sprintT > 1.2 },
+  { id: 'attack', text: () => `Saldır: ${glyph('attack')} — her vuruş farklı bir saldırı! (2 kez)`, done: g => g.tutInfo.attacks >= 2 },
+  { id: 'dodge', text: () => `Yerde yuvarlan: ${glyph('dodge')}`, done: g => g.tutInfo.dodges >= 1 },
+  { id: 'absorb', text: () => `Golem kırmızı titreyince ${glyph('absorb')} ile Rezonans Emilimi yap`, done: g => g.tutInfo.absorbs >= 1 }
+];
+
+// ---------- Dünya kurulumu ----------
+let senol, dummy, boss, gate, keyNode;
+function setupLevel() {
+  const sky = part(R.root, MESH.sphere, 'Sky', [0, 0, 0], [2400, 2400, 2400], [1, 1, 1], { sky: true }); Game.sky = sky;
+  Game.scene = new Node('scene'); R.root.add(Game.scene);
+  buildTerrain(Game.scene); buildScenery(Game.scene); FX.init(Game.scene);
+  const beaconLights = WORLD.beacon ? [WORLD.beacon] : [];
+  for (const b of beaconLights) part(Game.scene, MESH.sphere, 'Beacon', b, [2, 2, 2], [0.4, 0.85, 1], { unlit: true, emis: [0.4, 0.85, 1] });
+  (WORLD.cores || []).forEach(c => { const n = part(Game.scene, MESH.sphere, 'Core', c, [1.1, 1.1, 1.1], [0.35, 0.85, 1], { unlit: true, emis: [0.4, 0.9, 1] }); n.coreGlow = true; });
+  // Mühür noktaları
+  const sealPos = [[4, 4], [-5, 50], [5, 102]];
+  sealPos.forEach((p, i) => { const y = groundY(p[0], p[1]); const n = pivot(Game.scene, 'Seal' + i, [p[0], y, p[1]]);
+    part(n, MESH.cyl, 'Base', [0, 0.25, 0], [1.6, 0.5, 1.6], [0.35, 0.35, 0.4]); const c = part(n, MESH.box, 'Crystal', [0, 1.6, 0], [0.5, 1.8, 0.5], [0.4, 0.9, 1], { unlit: true, emis: [0.35, 0.8, 1] }); c.r = [0, 0.8, 0.3];
+    n.crystal = c; Game.seals.push({ node: n, x: p[0], z: p[1], y, used: false, cryst: c }); WORLD.colliders.push({ x: p[0], z: p[1], r: 0.9 }); });
+  // Kapı
+  const gz = 150; gate = pivot(Game.scene, 'Gate', [0, groundY(0, gz), gz]);
+  gate.leaf = part(gate, MESH.box, 'Leaf', [0, 2.5, 0], [6, 5, 0.7], [0.25, 0.25, 0.3]); part(gate.leaf, MESH.box, 'Glow', [0, 0, 0.55], [0.5, 0.5, 0.05], [0.4, 0.9, 1], { unlit: true, emis: [0.4, 0.9, 1] });
+  part(gate, MESH.box, 'PillarL', [-4, 5.5, 0], [2, 11, 2], [0.5, 0.5, 0.47]); part(gate, MESH.box, 'PillarR', [4, 5.5, 0], [2, 11, 2], [0.5, 0.5, 0.47]); part(gate, MESH.box, 'Lintel', [0, 10.2, 0], [10, 1.6, 2.2], [0.46, 0.46, 0.44]);
+  Game.blockers.push({ x0: -3.2, x1: 3.2, z0: gz - 0.8, z1: gz + 0.8, active: () => !Game.flags.gate });
+  WORLD.colliders.push({ x: -4, z: gz, r: 1.4 }, { x: 4, z: gz, r: 1.4 });
+  // Ötesi: Sessiz Kalp portalı
+  const pz = 168, py = groundY(0, pz); const portal = pivot(Game.scene, 'Portal', [0, py, pz]); portal.ring = part(portal, MESH.ring, 'Ring', [0, 4, 0], [9, 1, 9], [0.4, 0.9, 1], { unlit: true, additive: true, alpha: 0.8, emis: [0.4, 0.9, 1] }); portal.ring.r = [90 * DEG, 0, 0]; Game.portal = portal;
+  // Oyuncu
+  senol = new SenolActor(Game.scene); Game.senol = senol;
+  // Vael orb
+  vael.node = part(Game.scene, MESH.sphere, 'Vael', [0, 2, 0], [0.3, 0.3, 0.3], [0.62, 0.85, 1], { unlit: true, emis: [0.5, 0.8, 1] });
+  vael.halo = part(Game.scene, MESH.sphere, 'VaelHalo', [0, 2, 0], [0.6, 0.6, 0.6], [0.5, 0.8, 1], { unlit: true, additive: true, alpha: 0.12 });
+}
+
+function spawnEnemies() {
+  for (const e of Game.enemies) { e.node.visible = false; e.remove(); Game.scene.remove(e.node); }
+  Game.enemies = [];
+  const groups = [[[-3, 26], [3, 29], [0, 33]], [[-5, 54], [5, 54], [0, 59], [-8, 62]], [[-6, 84], [6, 86], [0, 90]]];
+  groups.forEach(g => g.forEach(p => { const c = new Creature([p[0], 0, p[1]]); c.spawn = c.pos.slice(); Game.enemies.push(c); }));
+  boss = new Boss([0, 0, 124], 0, 1.15, { name: 'Kristal Koruyucu', hp: 720, aggro: 24, leash: 60, speed: 3.2, second: true, attacks: BOSS_ATTACKS }); boss.spawn = boss.pos.slice(); boss.yaw = Math.PI; Game.enemies.push(boss);
+  if (!Game.flags.tutorial) { dummy = new Dummy([0, 0, 12]); dummy.node.visible = false; dummy.active = false; dummy.spawn = dummy.pos.slice(); Game.enemies.push(dummy); } else dummy = null;
+  if (Game.flags.bossDead) { boss.dead = true; boss.node.visible = false; boss.state = 'dead'; }
+  if (keyNode) { Game.scene.remove(keyNode); keyNode = null; }
+}
+
+// ---------- Kayıt ----------
+function save() { try { localStorage.setItem('senol_save', JSON.stringify({ flags: Game.flags, seal: Game.sealIdx, stats: Game.stats, v: 2 })); } catch (e) { } }
+function loadSave() { try { const s = JSON.parse(localStorage.getItem('senol_save') || 'null'); return s && s.v === 2 ? s : null; } catch (e) { return null; } }
+
+// ---------- Akış ----------
+function startGame(cont) {
+  Snd.init(); Snd.setVol();
+  const sv = cont ? loadSave() : null;
+  Game.flags = sv ? sv.flags : { key: false, gate: false, tutorial: false, bossDead: false }; Game.sealIdx = sv ? sv.seal : -1; Game.stats = sv ? sv.stats : { kills: 0, time: 0, deaths: 0, absorbs: 0 };
+  Game.tutStep = Game.flags.tutorial ? TUT.length : 0; Game.tutInfo = { moved: 0, sprintT: 0, attacks: 0, dodges: 0, absorbs: 0 };
+  for (const s of Game.seals) { s.used = false; }
+  gate.leaf.p[1] = Game.flags.gate ? -5.5 : 2.5;
+  spawnEnemies();
+  const sp = Game.sealIdx >= 0 ? Game.seals[Game.sealIdx] : null;
+  if (sp) senol.place([sp.x + 2, 0, sp.z - 2], 0); else senol.place([0, 0, -4], 0);
+  senol.res = 0; Game.cam.yaw = 0; Game.cam.pitch = 0.22; Game.pickups = [];
+  if (Game.flags.bossDead && !Game.flags.key) dropKey(boss.pos);
+  document.body.classList.remove('menu'); $('menu').style.display = 'none'; $('hud').style.display = 'block'; Game.state = 'play'; Game.running = true; Sub.done = {}; Sub.q = []; Sub.cur = null;
+  if (!sv) { Sub.say('intro1'); Sub.say('intro2'); }
+  const cv = $('c'); if (cv.requestPointerLock && Input.device !== 'pad') { try { cv.requestPointerLock(); } catch (e) { } }
+  Game.sealMsg = 0; updateObjective();
+}
+function dropKey(p) {
+  keyNode = pivot(Game.scene, 'Key', [p[0], groundY(p[0], p[2]) + 1.4, p[2] - 4]); keyNode.base = keyNode.p[1];
+  part(keyNode, MESH.box, 'Shaft', [0, 0, 0], [0.12, 0.7, 0.12], [1, 0.8, 0.3], { unlit: true, emis: [1, 0.7, 0.2] }); part(keyNode, MESH.box, 'Head', [0, 0.45, 0], [0.4, 0.3, 0.12], [1, 0.8, 0.3], { unlit: true, emis: [1, 0.7, 0.2] }); part(keyNode, MESH.box, 'Teeth', [0.12, -0.25, 0], [0.22, 0.12, 0.12], [1, 0.8, 0.3], { unlit: true, emis: [1, 0.7, 0.2] });
+  part(keyNode, MESH.sphere, 'Glow', [0, 0, 0], [1.4, 1.4, 1.4], [1, 0.8, 0.3], { unlit: true, additive: true, alpha: 0.2 });
+}
+function updateObjective() {
+  let t = '';
+  if (Game.tutStep < TUT.length) t = 'Eğitim: Vael\'in öğrettiği hareketleri dene';
+  else if (!Game.flags.bossDead) t = 'Hedef: Kristal Geçidi\'ni geç ve Kristal Koruyucu\'yu yen';
+  else if (!Game.flags.key) t = 'Hedef: Anahtarı al';
+  else if (!Game.flags.gate) t = 'Hedef: Anahtarı Kristal Kapı\'ya götür (' + glyph('interact') + ')';
+  else t = 'Hedef: Kapının ardındaki Sessiz Kalp\'a yürü';
+  $('obj').textContent = t;
+}
+
+function respawn() {
+  Game.stats.deaths++;
+  const sp = Game.sealIdx >= 0 ? Game.seals[Game.sealIdx] : null;
+  for (const e of Game.enemies) { if (e.dead || e.kind === 'dummy') continue; e.pos = e.spawn.slice(); e.hp = e.maxHp; e.state = e.kind === 'boss' ? 'dormant' : 'idle'; e.armorBroken = false; e.setWarning(0, false); if (e.kind === 'boss') { e.phase = 1; e.speed = 3.2; } }
+  hideBoss();
+  if (sp) senol.place([sp.x + 2, 0, sp.z - 2], 0); else senol.place([0, 0, -4], 0); senol.res = 0; senol.state = 'move'; Game.state = 'play';
+  $('fade').style.opacity = 0; Sub.say('died', true);
+}
+function hideBoss() { $('bossbar').style.display = 'none'; }
+
+GameEvents.on('action', id => { Game.tutInfo.attacks += (['slash_a', 'slash_b', 'sweep', 'slam', 'spin'].includes(id) ? 1 : 0); if (id === 'dodge') Game.tutInfo.dodges++; });
+GameEvents.on('absorb_success', () => { Game.tutInfo.absorbs++; Game.stats.absorbs++; Sub.say('absorb_ok'); });
+GameEvents.on('vael', id => Sub.say(id, id !== 'special_not_ready' ? false : true));
+GameEvents.on('shatter', () => Sub.say('shatter'));
+GameEvents.on('killed', () => { Game.stats.kills++; });
+GameEvents.on('boss_wake', b => { $('bossbar').style.display = 'block'; $('bossname').textContent = b.name; Sub.say('boss_wake'); });
+GameEvents.on('boss_phase2', () => Sub.say('boss_p2'));
+GameEvents.on('boss_dead', b => { Game.flags.bossDead = true; hideBoss(); Sub.say('boss_dead'); setTimeout(() => { dropKey(b.pos); save(); updateObjective(); }, 2600); });
+GameEvents.on('died', () => { Game.state = 'dead'; $('fade').style.opacity = 1; setTimeout(respawn, 2600); });
+
+// ---------- Ana güncelleme ----------
+function update(rawDt) {
+  const inp = Input.poll(rawDt);
+  if (Input.ev.pause && performance.now() - (Game.lastPause || 0) > 400 && !($('settings').style.display === 'flex' || $('controls').style.display === 'flex')) { if (Game.state === 'play') pause(true); else if (Game.state === 'pause') pause(false); }
+  if (Game.state === 'menu' || Game.state === 'pause' || Game.state === 'end') { MenuNav.update(); Input.clear(); updateCameraIdle(rawDt); return; }
+  let dt = rawDt;
+  if (Game.hitStopT > 0) { Game.hitStopT -= rawDt; dt = 0; } else if (Game.slowT > 0) { Game.slowT -= rawDt; dt = rawDt * Game.slowScale; }
+  Game.stats.time += rawDt;
+  // Kamera girdisi
+  if (Game.state === 'play' || Game.state === 'dead') { Game.cam.yaw += inp.look[0]; Game.cam.pitch = Math.min(1.1, Math.max(-0.25, Game.cam.pitch + inp.look[1])); }
+  if (Game.state === 'cine') { updateCine(rawDt); Input.clear(); }
+  senol.update(dt, Game.state === 'play' ? inp : { move: [0, 0], look: [0, 0], sprintHeld: false });
+  if (Game.state === 'play') { Game.tutInfo.moved += Math.hypot(senol.vel[0], senol.vel[2]) * dt; if (senol.sprintActive) Game.tutInfo.sprintT += dt; }
+  for (const e of Game.enemies) e.update(dt, senol);
+  FX.update(dt);
+  // Eğitim
+  if (Game.tutStep < TUT.length && Game.state === 'play') {
+    const step = TUT[Game.tutStep]; $('prompt').textContent = step.text(); $('prompt').style.opacity = 1;
+    if (step.id === 'absorb' && dummy) { dummy.node.visible = true; dummy.active = true; }
+    if (step.done(Game)) { Game.tutStep++; Snd.play('ui'); if (Game.tutStep >= TUT.length) { Game.flags.tutorial = true; $('prompt').style.opacity = 0; Sub.say('tut_done'); if (dummy) { dummy.node.visible = false; dummy.dead = true; } save(); updateObjective(); }
+      else { if (TUT[Game.tutStep].id === 'absorb' && dummy) { dummy.node.visible = true; dummy.active = true; dummy.stateEnd = performance.now() / 1000 + 1.0; } } }
+  }
+  // İlk düşman
+  if (Game.state === 'play') for (const e of Game.enemies) if (e.kind === 'creature' && !e.dead && e.state !== 'idle') { Sub.say('first_enemy'); break; }
+  // Mühürler, anahtar, kapı, portal
+  let prompt = '';
+  if (Game.state === 'play') {
+    for (let i = 0; i < Game.seals.length; i++) { const s = Game.seals[i], d = Math.hypot(senol.pos[0] - s.x, senol.pos[2] - s.z);
+      if (d < 3.2) { prompt = `${glyph('interact')}: Mührü etkinleştir`; if (Input.ev.interact) { Game.sealIdx = i; senol.heal(100); senol.res = Math.max(senol.res, 40); Snd.play('seal'); FX.ring([s.x, s.y, s.z], 0.5, 4, 0.8, FX.BLUE); FX.sparks([s.x, s.y + 1.5, s.z], 30, 5, FX.BLUE, 0); save(); Sub.say('seal', true); Game.sealMsg = 2; } } }
+    if (keyNode) { const kd = Math.hypot(senol.pos[0] - keyNode.p[0], senol.pos[2] - keyNode.p[2]); if (kd < 2.6) { Game.flags.key = true; Game.scene.remove(keyNode); keyNode = null; Snd.play('key'); Sub.say('key'); save(); updateObjective(); } }
+    const gd = Math.hypot(senol.pos[0] - 0, senol.pos[2] - 150);
+    if (gd < 6 && !Game.flags.gate) { if (Game.flags.key) { prompt = `${glyph('interact')}: Kapıyı aç`; if (Input.ev.interact) openGate(); } else { prompt = 'Kapı mühürlü'; Sub.say('gate_locked'); } }
+    if (Game.flags.gate && senol.pos[2] > 164 && Math.abs(senol.pos[0]) < 6) endGame();
+    if (senol.hp > 0 && senol.hp < 30) Sub.say('low_hp');
+    if (senol.res >= senol.resMax) Sub.say('special_ready');
+  }
+  if (prompt) { $('prompt').textContent = prompt; $('prompt').style.opacity = 1; } else if (Game.tutStep >= TUT.length) $('prompt').style.opacity = 0;
+  Input.clear();
+  Sub.update(rawDt);
+  // Vael
+  const tt = performance.now() / 1000; vael.pulse = Math.max(0, vael.pulse - rawDt * 1.5);
+  const target = [senol.pos[0] - Math.cos(Game.cam.yaw) * -0.9 - Math.sin(Game.cam.yaw) * 0.5, senol.pos[1] + 2.35 + Math.sin(tt * 1.6) * 0.12, senol.pos[2] + Math.sin(Game.cam.yaw) * -0.9 - Math.cos(Game.cam.yaw) * 0.5];
+  for (let i = 0; i < 3; i++) vael.pos[i] += (target[i] - vael.pos[i]) * (1 - Math.exp(-4 * rawDt));
+  vael.node.p = vael.pos.slice(); vael.halo.p = vael.pos.slice(); const ps = 0.3 + vael.pulse * 0.2; vael.node.s = [ps, ps, ps]; const hs = 0.5 + vael.pulse * 0.4 + Math.sin(tt * 3) * 0.04; vael.halo.s = [hs, hs, hs];
+  // Anahtar, portal, mühür animasyonu
+  if (keyNode) { keyNode.p[1] = keyNode.base + Math.sin(tt * 2) * 0.2; keyNode.r = [0, tt * 1.5, 0]; }
+  if (Game.portal) Game.portal.ring.r = [90 * DEG, tt * 0.5, 0]; for (const s of Game.seals) { s.cryst.r = [0, tt * 0.8, 0.3]; }
+  if (Game.flags.gate && gate.leaf.p[1] > -5.5) gate.leaf.p[1] = Math.max(-5.5, gate.leaf.p[1] - rawDt * 2.2);
+  // Boss çubuğu
+  if (boss && boss.state !== 'dormant' && !boss.dead) $('bossfill').style.width = Math.max(0, boss.hp / boss.maxHp * 100) + '%';
+  hud(); updateCamera(rawDt);
+}
+function openGate() {
+  Game.flags.gate = true; Snd.play('gate'); Sub.say('gate_open'); Game.shake(0.6); updateObjective(); save();
+  Game.state = 'cine'; Game.cine = { t: 0, dur: 6 }; document.body.classList.add('cine');
+}
+function updateCine(dt) { Game.cine.t += dt; if (Game.cine.t > Game.cine.dur) { Game.state = 'play'; document.body.classList.remove('cine'); } }
+function endGame() {
+  Game.state = 'end'; Sub.say('end1'); Sub.say('end2'); document.exitPointerLock && document.exitPointerLock();
+  setTimeout(() => { $('fade').style.opacity = 1; }, 2500);
+  setTimeout(() => { const m = Math.floor(Game.stats.time / 60), s = Math.floor(Game.stats.time % 60); $('endstats').textContent = `Süre ${m}:${String(s).padStart(2, '0')} · Yenilen yaratık ${Game.stats.kills} · Emilim ${Game.stats.absorbs} · Düşme ${Game.stats.deaths}`; $('end').style.display = 'flex'; }, 5200);
+}
+
+function hud() {
+  $('hpfill').style.width = (senol.hp / senol.maxHp * 100) + '%'; const rf = senol.res / senol.resMax * 100; $('resfill').style.width = rf + '%'; $('resbar').classList.toggle('full', rf >= 99.9);
+  $('hint').innerHTML = `<b>${glyph('attack')}</b> Saldır · <b>${glyph('special')}</b> Özel · <b>${glyph('dodge')}</b> Yuvarlan · <b>${glyph('absorb')}</b> Emilim · <b>${glyph('sprint')}</b> Hızlı koşu`;
+}
+
+// ---------- Kamera ----------
+let camPos = [0, 5, -6], camTgt = [0, 1.5, 0];
+function updateCamera(dt) {
+  const c = Game.cam; let tgt = [senol.pos[0], senol.pos[1] + 1.55, senol.pos[2]], dist = c.dist, yaw = c.yaw, pitch = c.pitch, fov = 62;
+  if (senol.sprintActive) { dist += 0.6; fov = 68; }
+  if (Game.state === 'cine') { const k = Math.min(1, Game.cine.t / 1.2), look = [0, 4, 150]; tgt = [tgt[0] + (look[0] - tgt[0]) * k, tgt[1] + (look[1] - tgt[1]) * k, tgt[2] + (look[2] - tgt[2]) * k]; dist = 5.4 + 8 * k; pitch = 0.1; yaw = 0; }
+  if (Game.state === 'dead') { dist += Math.min(2.5, senol.t * 1.2); }
+  const cp = Math.cos(pitch), want = [tgt[0] - Math.sin(yaw) * cp * dist, tgt[1] + Math.sin(pitch) * dist, tgt[2] - Math.cos(yaw) * cp * dist];
+  const gy = groundY(want[0], want[2]) + 0.7; if (want[1] < gy) want[1] = gy;
+  const k = 1 - Math.exp(-14 * dt); for (let i = 0; i < 3; i++) { camPos[i] += (want[i] - camPos[i]) * k; camTgt[i] += (tgt[i] - camTgt[i]) * k; }
+  Game.shakeAmt = Math.max(0, Game.shakeAmt - dt * 2.2); const sh = Game.shakeAmt * Game.shakeAmt * 0.6; const p = [camPos[0] + (Math.random() - .5) * sh, camPos[1] + (Math.random() - .5) * sh, camPos[2] + (Math.random() - .5) * sh];
+  Game.view = { p, t: camTgt.slice(), fov };
+}
+function updateCameraIdle(dt) {
+  const t = performance.now() / 1000;
+  if (Game.state === 'menu') { Game.view = { p: [Math.sin(t * 0.08) * 40, 14 + Math.sin(t * 0.2) * 2, -30 + Math.cos(t * 0.08) * 12], t: [0, 6, 20], fov: 55 }; return; }
+  if (senol) updateCamera(dt);
+}
+
+// ---------- Menüler ----------
+function pause(on) {
+  Game.lastPause = performance.now();
+  if (on) { Game.state = 'pause'; $('pausemenu').style.display = 'flex'; document.exitPointerLock && document.exitPointerLock(); }
+  else { Game.state = 'play'; $('pausemenu').style.display = 'none'; hideSub(); if (Input.device !== 'pad') { try { $('c').requestPointerLock(); } catch (e) { } } }
+}
+function hideSub() { $('controls').style.display = 'none'; $('settings').style.display = 'none'; }
+function toMenu() { Game.state = 'menu'; Game.running = false; $('pausemenu').style.display = 'none'; $('end').style.display = 'none'; $('menu').style.display = 'flex'; $('hud').style.display = 'none'; $('fade').style.opacity = 0; document.body.classList.remove('cine'); document.exitPointerLock && document.exitPointerLock(); refreshMenu(); }
+function refreshMenu() { $('btnContinue').style.display = loadSave() ? 'block' : 'none'; }
+function controlsTable() {
+  const rows = [['Hareket (yürüme)', 'W A S D', 'Sol çubuğu it'], ['Kamera', 'Fare (veya ok tuşları)', 'Sağ çubuk'], ['Hızlı koşu', 'Shift basılı tut', 'L3\'e bas + it (tırpan sırta geçer)'], ['Saldırı (rastgele sıra)', 'Sol tık / J', 'R2'], ['Özel saldırı (Rezonans dolu)', 'Sağ tık / K', '△'],
+    ['Yerde yuvarlanma (kaçınma)', 'Boşluk', '○'], ['Rezonans Emilimi', 'Q / F', '□'], ['Etkileşim', 'E', '✕'], ['Duraklat', 'Esc / P', 'Start']];
+  $('ctable').innerHTML = '<tr><th></th><th>Klavye + Fare</th><th>Kumanda (DualSense / Xbox)</th></tr>' + rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+}
+function bindUI() {
+  $('btnNew').onclick = () => { Snd.init(); try { localStorage.removeItem('senol_save'); } catch (e) { } startGame(false); };
+  $('btnContinue').onclick = () => startGame(true);
+  const openC = () => { controlsTable(); $('controls').style.display = 'flex'; Snd.init(); Snd.play('ui'); };
+  $('btnControls').onclick = openC; $('pControls').onclick = openC; $('closeControls').onclick = () => $('controls').style.display = 'none';
+  const openS = () => { $('vol').value = Settings.vol; $('mouse').value = Settings.mouse; $('voice').checked = Settings.voice; $('settings').style.display = 'flex'; };
+  $('btnSettings').onclick = openS; $('pSettings').onclick = openS; $('closeSettings').onclick = () => { $('settings').style.display = 'none'; };
+  $('vol').oninput = e => { Settings.vol = +e.target.value; Snd.setVol(); Settings.save(); }; $('mouse').oninput = e => { Settings.mouse = +e.target.value; Settings.save(); };
+  $('voice').onchange = e => { Settings.voice = e.target.checked; Settings.save(); if (Settings.voice) Snd.speak('Ben Vael. Sesimi duyuyorsun.'); };
+  $('pResume').onclick = () => pause(false); $('pMenu').onclick = toMenu; $('endMenu').onclick = toMenu;
+  document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && Game.state === 'play' && Input.device !== 'pad') pause(true); });
+  refreshMenu();
+}
+
+
+// ---------- Menü gezinme (kumanda D-pad/sol çubuk + ✕/○, klavye ok + Enter) ----------
+const MenuNav = { idx: 0, last: null,
+  container() { for (const id of ['settings', 'controls', 'end', 'pausemenu', 'menu']) { const el = $(id); if (el && getComputedStyle(el).display !== 'none') return el; } return null; },
+  items(c) { return Array.from(c.querySelectorAll('button,input')).filter(e => e.offsetParent !== null); },
+  update() {
+    const ev = Input.ev, c = this.container(); if (!c) return false;
+    if (c.id === 'menu' && Game.state !== 'menu' && Game.state !== 'pause') return false;
+    const items = this.items(c); if (!items.length) return false;
+    if (this.last !== c) { this.last = c; this.idx = 0; }
+    const any = ev.navUp || ev.navDown || ev.navLeft || ev.navRight || ev.confirm || ev.back;
+    if (ev.navUp) this.idx = (this.idx + items.length - 1) % items.length; if (ev.navDown) this.idx = (this.idx + 1) % items.length;
+    this.idx = Math.min(this.idx, items.length - 1); const cur = items[this.idx];
+    items.forEach(e => e.classList.remove('focus')); if (Input.device === 'pad' || any) cur.classList.add('focus');
+    if (cur.type === 'range' && (ev.navLeft || ev.navRight)) { const st = +cur.step || 0.1; cur.value = Math.min(+cur.max, Math.max(+cur.min, +cur.value + (ev.navRight ? st : -st))); cur.dispatchEvent(new Event('input')); }
+    if (ev.confirm) { Snd.init(); cur.click(); }
+    if (ev.back) { if (c.id === 'settings') $('closeSettings').click(); else if (c.id === 'controls') $('closeControls').click(); else if (c.id === 'pausemenu') pause(false); }
+    if (any) Snd.play('ui');
+    return true;
+  }
+};
+
+// ---------- Başlat ----------
+function frame(now) {
+  const dt = Math.min(0.05, (now - (frame.last || now)) / 1000); frame.last = now;
+  try { update(dt); } catch (e) { console.error(e); window.__err = String(e && e.stack || e); }
+  const v = Game.view || { p: [0, 10, -20], t: [0, 2, 0], fov: 60 }; if (Game.sky) Game.sky.p = v.p.slice(); R.render(v.p, v.t, v.fov);
+  window.__frames = (window.__frames || 0) + 1; requestAnimationFrame(frame);
+}
+function boot() {
+  try { R = new Renderer($('c')); } catch (e) { $('fatal').style.display = 'flex'; $('fatal').textContent = 'Bu tarayıcı WebGL2 desteklemiyor: ' + e.message; return; }
+  initMeshes(); setupLevel(); bindUI(); Game.state = 'menu'; Game.view = null;
+  R.fog = [0.66, 0.74, 0.82]; requestAnimationFrame(frame);
+}
+window.addEventListener('load', boot);
+
+</script></body></html>
